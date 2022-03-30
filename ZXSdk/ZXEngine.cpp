@@ -20,6 +20,7 @@ ZXEngine::ZXEngine()
 	strUid = "";
 	strRid = "";
 	strUrl = "";
+	bLogin = false;
 
 	mListen = nullptr;
 	vtRemotePeers.clear();
@@ -61,10 +62,11 @@ void ZXEngine::OnMessage(rtc::Message * msg)
 		}
 		if (nCount >= 2)
 		{
+			bLogin = false;
 			respSocketEvent();
 			return;
 		}
-		if (g_ws_thread_ != nullptr)
+		if (g_ws_thread_.get() != nullptr && bLogin)
 		{
 			rtc::Location loc(__FUNCTION__, __FILE__);
 			g_ws_thread_->PostDelayed(loc, 20000, this, 2000);
@@ -118,12 +120,14 @@ bool ZXEngine::start()
 	std::string port_ = cport;
 	std::string url = "ws://" + g_server_ip + ":" + port_ + "/ws?peer=" + strUid;
 	strUrl = url;
+
 	return mZXClient.Start();
 }
 
 // 停止连接
 void ZXEngine::stop()
 {
+	bLogin = false;
 	mZXClient.Stop();
 }
 
@@ -149,6 +153,7 @@ bool ZXEngine::joinRoom(std::string rid)
 	strRid = rid;
 	if (mZXClient.SendJoin())
 	{
+		bLogin = true;
 		if (g_ws_thread_.get() != nullptr)
 		{
 			rtc::Location loc(__FUNCTION__, __FILE__);
@@ -162,6 +167,7 @@ bool ZXEngine::joinRoom(std::string rid)
 // 离开房间
 void ZXEngine::leaveRoom()
 {
+	bLogin = false;
 	if (g_ws_thread_.get() != nullptr)
 	{
 		g_ws_thread_->Clear(this, 2000);
@@ -172,7 +178,15 @@ void ZXEngine::leaveRoom()
 // 启动推流
 void ZXEngine::startPublish()
 {
-	mLocalPeer.StartPublish();
+	if (peer_connection_factory_ == nullptr)
+	{
+		return;
+	}
+
+	if (bLogin)
+	{
+		mLocalPeer.StartPublish();
+	}
 }
 
 // 停止推流
@@ -187,19 +201,27 @@ void ZXEngine::stopPublish()
 // 启动拉流
 void ZXEngine::startSubscribe(std::string uid, std::string mid, std::string sfu)
 {
-	mutex.lock();
-	ZXPeerRemote* pRemote = vtRemotePeers[mid];
-	if (pRemote == nullptr)
+	if (peer_connection_factory_ == nullptr)
 	{
-		pRemote = new ZXPeerRemote();
-		pRemote->strUid = uid;
-		pRemote->strMid = mid;
-		pRemote->strSfu = sfu;
-		pRemote->pZXEngine = this;
-		vtRemotePeers[mid] = pRemote;
+		return;
 	}
-	pRemote->StartSubscribe();
-	mutex.unlock();
+
+	//if (bLogin)
+	{
+		mutex.lock();
+		ZXPeerRemote* pRemote = vtRemotePeers[mid];
+		if (pRemote == nullptr)
+		{
+			pRemote = new ZXPeerRemote();
+			pRemote->strUid = uid;
+			pRemote->strMid = mid;
+			pRemote->strSfu = sfu;
+			pRemote->pZXEngine = this;
+			vtRemotePeers[mid] = pRemote;
+		}
+		pRemote->StartSubscribe();
+		mutex.unlock();
+	}
 }
 
 // 停止拉流
@@ -348,7 +370,7 @@ void ZXEngine::OnPeerPublish(bool bSuc, std::string error)
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	if (mListen != nullptr)
+	if (mListen != nullptr && bLogin)
 	{
 		mListen((char*)(jsonStr.c_str()));
 	}
@@ -365,7 +387,7 @@ void ZXEngine::OnPeerPublishError()
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	if (mListen != nullptr)
+	if (mListen != nullptr && bLogin)
 	{
 		mListen((char*)(jsonStr.c_str()));
 	}
@@ -387,7 +409,7 @@ void ZXEngine::OnPeerSubscribe(std::string mid, bool bSuc, std::string error)
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	if (mListen != nullptr)
+	if (mListen != nullptr && bLogin)
 	{
 		mListen((char*)(jsonStr.c_str()));
 	}
@@ -407,7 +429,7 @@ void ZXEngine::OnPeerSubscribeError(std::string mid)
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	if (mListen != nullptr)
+	if (mListen != nullptr && bLogin)
 	{
 		mListen((char*)(jsonStr.c_str()));
 	}

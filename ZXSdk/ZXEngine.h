@@ -107,6 +107,7 @@ private:
 
 public:
 	// 基本参数
+	bool bLogin;
 	std::string strUid;
 	std::string strRid;
 	std::string strUrl;
