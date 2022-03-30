@@ -307,6 +307,7 @@ void ZXClient::recvThread(ZXClient * client)
 		}
 		if (!client->bClose)
 		{
+			client->bClose = true;
 			client->pZXEngine->respSocketEvent();
 		}
 		RTC_LOG(LS_ERROR) << "websocket recv thread stop";
