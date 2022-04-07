@@ -35,12 +35,10 @@ void OfferCreateSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 {
 	if (pZXPeerLocal != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "local offer sdp create error = " << webrtc::ToString(error.type()) << ": " << error.message();
 		pZXPeerLocal->CreateSdpFail(error.message());
 	}
 	if (pZXPeerRemote != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "remote offer sdp create error = " << webrtc::ToString(error.type()) << ": " << error.message();
 		pZXPeerRemote->CreateSdpFail(error.message());
 	}
 }
@@ -77,12 +75,10 @@ void OfferSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 {
 	if (pZXPeerLocal != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "local offer sdp set error = " << webrtc::ToString(error.type()) << ": " << error.message();
 		pZXPeerLocal->OnSetLoaclSdpFail(error.message());
 	}
 	if (pZXPeerRemote != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "remote offer sdp set error = " << webrtc::ToString(error.type()) << ": " << error.message();
 		pZXPeerRemote->OnSetLoaclSdpFail(error.message());
 	}
 }
@@ -119,12 +115,10 @@ void AnswerSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 {
 	if (pZXPeerLocal != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "local answer sdp set error = " << webrtc::ToString(error.type()) << ": " << error.message();
 		pZXPeerLocal->OnSetRemoteSdpFail(error.message());
 	}
 	if (pZXPeerRemote != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "remote answer sdp set error = " << webrtc::ToString(error.type()) << ": " << error.message();
 		pZXPeerRemote->OnSetRemoteSdpFail(error.message());
 	}
 }

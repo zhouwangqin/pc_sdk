@@ -1,22 +1,27 @@
 #pragma once
 #include <mutex>
 #include <string>
-#include "easywsclient.hpp"
-using easywsclient::WebSocket;
+#include "WebSocket.h"
 
 class ZXEngine;
-class ZXClient
+class ZXClient : public WSCall
 {
 public:
 	ZXClient();
 	~ZXClient();
 
 public:
-	// 接收线程
-	static void recvThread(ZXClient* client);
+	// WSCall implementation
+	void onMessage(const std::string& msg) override;
+	void onOpen(const std::string& err) override;
+	void onClose(const std::string& err) override;
+	void onFail(const std::string& err) override;
+
+	// 接收
+	void OnDataRecv(const std::string message);
 
 	// 建立ws连接
-	bool Start();
+	bool Start(std::string url);
 
 	// 关闭ws连接
 	void Stop();
@@ -53,8 +58,8 @@ public:
 	 "data":{
 	   "rid":"room"
 	 }
-   */
-   // 发送心跳
+	*/
+	// 发送心跳
 	bool SendAlive();
 
 	/*
@@ -120,20 +125,20 @@ public:
 	ZXEngine *pZXEngine;
 
 	// 临时变量
-	std::string sfuId;
+	std::string strSfu;
 	std::string strMid;
 	std::string strSdp;
 	std::string strSid;
 
+	bool close_;
+	bool connect_;
 	std::mutex mutex_;
-	WebSocket::pointer websocket_;
+	WebSocketClient websocket_;
 
 	// 信令参数
 	int nIndex;
 	int nType;
 	int nRespOK;
 	bool bRespResult;
-	// 退出标记
-	bool bClose;
 };
 

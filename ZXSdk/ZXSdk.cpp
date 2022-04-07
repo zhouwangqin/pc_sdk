@@ -39,11 +39,6 @@ WEBRTC_API void stop()
 	mZXEngine.stop();
 }
 
-WEBRTC_API bool getConnect()
-{
-	return mZXEngine.getConnect();
-}
-
 WEBRTC_API bool joinRoom(char *rid)
 {
 	return mZXEngine.joinRoom(rid);
@@ -52,26 +47,6 @@ WEBRTC_API bool joinRoom(char *rid)
 WEBRTC_API void leaveRoom()
 {
 	mZXEngine.leaveRoom();
-}
-
-WEBRTC_API void startPublish()
-{
-	mZXEngine.startPublish();
-}
-
-WEBRTC_API void stopPublish()
-{
-	mZXEngine.stopPublish();
-}
-
-WEBRTC_API void startSubscribe(char *uid, char *mid, char *sfu)
-{
-	mZXEngine.startSubscribe(uid, mid, sfu);
-}
-
-WEBRTC_API void stopSubscribe(char *mid)
-{
-	mZXEngine.stopSubscribe(mid);
 }
 
 WEBRTC_API void setMicrophoneMute(bool mute)

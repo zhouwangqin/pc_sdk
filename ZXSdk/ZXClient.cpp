@@ -1,26 +1,27 @@
 #include "pch.h"
 #include "ZXClient.h"
 #include "ZXEngine.h"
-#include "easywsclient.hpp"
 #include "rtc_base/strings/json.h"
 
 #include <cstdlib>
 #define random(a,b) (rand()%(b-a)+a)
 
-static ZXClient* pClient = nullptr;
-
 ZXClient::ZXClient()
 {
-	pClient = this;
-
-	websocket_ = nullptr;
+	close_ = false;
+	connect_ = false;
 	pZXEngine = nullptr;
+	websocket_.set_callback(this);
+
+	strSfu = "";
+	strMid = "";
+	strSdp = "";
+	strSid = "";
 
 	nIndex = 0;
 	nType = -1;
 	nRespOK = -1;
 	bRespResult = false;
-	bClose = false;
 }
 
 ZXClient::~ZXClient()
@@ -28,15 +29,39 @@ ZXClient::~ZXClient()
 	
 }
 
-void OnDataRecv(const std::string& message)
+void ZXClient::onMessage(const std::string & msg)
+{
+	OnDataRecv(msg);
+}
+
+void ZXClient::onOpen(const std::string & err)
+{
+	connect_ = true;
+}
+
+void ZXClient::onClose(const std::string & err)
+{
+	connect_ = false;
+	if (!close_ && pZXEngine != nullptr)
+	{
+		pZXEngine->respSocketEvent();
+	}
+}
+
+void ZXClient::onFail(const std::string & err)
+{
+	connect_ = false;
+	if (!close_ && pZXEngine != nullptr)
+	{
+		pZXEngine->respSocketEvent();
+	}
+}
+
+void ZXClient::OnDataRecv(const std::string message)
 {
 	RTC_LOG(LS_ERROR) << "websocket recv = " << message;
 
-	if (pClient == nullptr)
-	{
-		return;
-	}
-	if (pClient->bClose)
+	if (close_)
 	{
 		return;
 	}
@@ -44,12 +69,6 @@ void OnDataRecv(const std::string& message)
 	Json::Value jRoot;
 	Json::Reader reader;
 	if (!reader.parse(message, jRoot))
-
-	//Json::Value jRoot;
-	//Json::String jErrs;
-	//Json::CharReaderBuilder jBuilder;
-	//std::unique_ptr<Json::CharReader> jReader(jBuilder.newCharReader());
-	//if (!jReader->parse(message.c_str(), message.c_str() + message.length(), &jRoot, &jErrs))
 	{
 		RTC_LOG(LS_ERROR) << "recv data = " << message << ", error = ";// << jErrs;
 		return;
@@ -66,7 +85,7 @@ void OnDataRecv(const std::string& message)
 			return;
 		}
 
-		if (nId == pClient->nIndex)
+		if (nId == nIndex)
 		{
 			bool bOK = false;
 			if (!rtc::GetBoolFromJsonObject(jRoot, "ok", &bOK))
@@ -77,10 +96,10 @@ void OnDataRecv(const std::string& message)
 
 			if (bOK)
 			{
-				pClient->nRespOK = 1;
-				if (pClient->nType == 10000)
+				nRespOK = 1;
+				if (nType == 10000)
 				{
-					pClient->bRespResult = true;
+					bRespResult = true;
 
 					Json::Value jData;
 					if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
@@ -112,7 +131,7 @@ void OnDataRecv(const std::string& message)
 
 					for (size_t i = 0; i < jUser.size(); i++)
 					{
-						pClient->pZXEngine->respPeerJoin(jUser[i]);
+						pZXEngine->respPeerJoin(jUser[i]);
 					}
 
 					std::vector<Json::Value> jPub;
@@ -124,14 +143,14 @@ void OnDataRecv(const std::string& message)
 
 					for (size_t i = 0; i < jPub.size(); i++)
 					{
-						pClient->pZXEngine->respStreamAdd(jPub[i]);
+						pZXEngine->respStreamAdd(jPub[i]);
 					}
 				}
-				if (pClient->nType == 10002)
+				if (nType == 10002)
 				{
-					pClient->bRespResult = true;
+					bRespResult = true;
 				}
-				if (pClient->nType == 10010)
+				if (nType == 10010)
 				{
 					Json::Value jData;
 					if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
@@ -153,7 +172,7 @@ void OnDataRecv(const std::string& message)
 						RTC_LOG(LS_ERROR) << "recv data sdp error";
 						return;
 					}
-					pClient->strSdp = sdp;
+					strSdp = sdp;
 
 					std::string mid;
 					if (!rtc::GetStringFromJsonObject(jData, "mid", &mid))
@@ -161,7 +180,7 @@ void OnDataRecv(const std::string& message)
 						RTC_LOG(LS_ERROR) << "recv data mid error";
 						return;
 					}
-					pClient->strMid = mid;
+					strMid = mid;
 
 					std::string sfu;
 					if (!rtc::GetStringFromJsonObject(jData, "sfuid", &sfu))
@@ -169,11 +188,11 @@ void OnDataRecv(const std::string& message)
 						RTC_LOG(LS_ERROR) << "recv data sfu error";
 						return;
 					}
-					pClient->sfuId = sfu;
+					strSfu = sfu;
 
-					pClient->bRespResult = true;
+					bRespResult = true;
 				}
-				if (pClient->nType == 10015)
+				if (nType == 10015)
 				{
 					Json::Value jData;
 					if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
@@ -195,7 +214,7 @@ void OnDataRecv(const std::string& message)
 						RTC_LOG(LS_ERROR) << "recv data sdp error";
 						return;
 					}
-					pClient->strSdp = sdp;
+					strSdp = sdp;
 
 					std::string sid;
 					if (!rtc::GetStringFromJsonObject(jData, "sid", &sid))
@@ -203,14 +222,14 @@ void OnDataRecv(const std::string& message)
 						RTC_LOG(LS_ERROR) << "recv data mid error";
 						return;
 					}
-					pClient->strSid = sid;
+					strSid = sid;
 
-					pClient->bRespResult = true;
+					bRespResult = true;
 				}
 			}
 			else
 			{
-				pClient->nRespOK = 0;
+				nRespOK = 0;
 			}
 		}
 	}
@@ -240,7 +259,7 @@ void OnDataRecv(const std::string& message)
 					return;
 				}
 
-				pClient->pZXEngine->respPeerJoin(jData);
+				pZXEngine->respPeerJoin(jData);
 			}
 			if (method == "peer-leave")
 			{
@@ -251,7 +270,7 @@ void OnDataRecv(const std::string& message)
 					return;
 				}
 
-				pClient->pZXEngine->respPeerLeave(jData);
+				pZXEngine->respPeerLeave(jData);
 			}
 			if (method == "stream-add")
 			{
@@ -262,7 +281,7 @@ void OnDataRecv(const std::string& message)
 					return;
 				}
 
-				pClient->pZXEngine->respStreamAdd(jData);
+				pZXEngine->respStreamAdd(jData);
 			}
 			if (method == "stream-remove")
 			{
@@ -273,7 +292,7 @@ void OnDataRecv(const std::string& message)
 					return;
 				}
 
-				pClient->pZXEngine->respStreamRemove(jData);
+				pZXEngine->respStreamRemove(jData);
 			}
 			if (method == "peer-kick")
 			{
@@ -284,91 +303,67 @@ void OnDataRecv(const std::string& message)
 					return;
 				}
 
-				pClient->pZXEngine->respPeerKick(jData);
+				pZXEngine->respPeerKick(jData);
 			}
 		}
 	}
 }
 
-void ZXClient::recvThread(ZXClient * client)
-{
-	if (client != nullptr)
-	{
-		RTC_LOG(LS_ERROR) << "websocket recv thread start";
-		while (client->websocket_ != nullptr && client->websocket_->getReadyState() == WebSocket::OPEN)
-		{
-			client->websocket_->poll();
-			if (client->bClose)
-			{
-				RTC_LOG(LS_ERROR) << "websocket recv thread stop";
-				return;
-			}
-			client->websocket_->dispatch(OnDataRecv);
-		}
-		if (!client->bClose)
-		{
-			client->bClose = true;
-			client->pZXEngine->respSocketEvent();
-		}
-		RTC_LOG(LS_ERROR) << "websocket recv thread stop";
-	}
-}
-
-bool ZXClient::Start()
+bool ZXClient::Start(std::string url)
 {
 	Stop();
 
-	RTC_LOG(LS_ERROR) << "websocket url = " << pZXEngine->strUrl;
+	RTC_LOG(LS_ERROR) << "websocket url = " << url;
 
+	close_ = false;
+	connect_ = false;
 	mutex_.lock();
-	websocket_ = easywsclient::WebSocket::from_url(pZXEngine->strUrl);
-	if (websocket_ != nullptr)
+	bool suc = websocket_.open(url);
+	if (suc)
 	{
-		std::thread read_thread_(recvThread, this);
-		read_thread_.detach();
-		bClose = false;
-		mutex_.unlock();
-		return true;
+		int nCount = 50;
+		while (nCount > 0)
+		{
+			if (close_)
+			{
+				mutex_.unlock();
+				return false;
+			}
+			if (connect_)
+			{
+				mutex_.unlock();
+				return true;
+			}
+			Sleep(100);
+			nCount--;
+		}
 	}
 	mutex_.unlock();
-	return false;
+	return suc;
 }
 
 void ZXClient::Stop()
 {
-	bClose = true;
+	close_ = true;
+	connect_ = false;
+
 	mutex_.lock();
-	if (websocket_ != nullptr)
-	{
-		websocket_->close();
-		//delete websocket_;
-		websocket_ = nullptr;
-	}
+	websocket_.close();
 	mutex_.unlock();
 }
 
 bool ZXClient::GetConnect()
 {
-	if (bClose)
-	{
-		return false;
-	}
-	if (websocket_ == nullptr)
-	{
-		return false;
-	}
-
-	WebSocket::readyStateValues status = websocket_->getReadyState();
-	if (status == WebSocket::readyStateValues::OPEN)
-	{
-		return true;
-	}
-	return false;
+	return connect_;
 }
 
 bool ZXClient::SendJoin()
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return false;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return false;
 	}
@@ -389,41 +384,40 @@ bool ZXClient::SendJoin()
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonStr;
-	std::ostringstream os;
-	Json::StreamWriterBuilder writerBuilder;
-	std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-	jsonWriter->write(jRoot, &os);
-	jsonStr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send join = " << jsonStr;
 
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10000;
-		websocket_->send(jsonStr);
-
-		int nCount = 30;
-		while (nCount > 0)
+		if (websocket_.send(jsonStr))
 		{
-			if (nRespOK == 0)
+			int nCount = 30;
+			while (nCount > 0)
 			{
-				mutex_.unlock();
-				return false;
-			}
-			if (nRespOK == 1)
-			{
-				if (bRespResult)
+				if (nRespOK == 0)
 				{
 					mutex_.unlock();
-					return true;
+					return false;
 				}
+				if (nRespOK == 1)
+				{
+					if (bRespResult)
+					{
+						mutex_.unlock();
+						return true;
+					}
+				}
+				if (close_)
+				{
+					mutex_.unlock();
+					return false;
+				}
+				Sleep(100);
+				nCount--;
 			}
-			Sleep(100);
-			nCount--;
 		}
 	}
 	mutex_.unlock();
@@ -432,7 +426,11 @@ bool ZXClient::SendJoin()
 
 void ZXClient::SendLeave()
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return;
 	}
@@ -452,25 +450,22 @@ void ZXClient::SendLeave()
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonstr;
-	std::ostringstream os;
-	json::streamwriterbuilder writerbuilder;
-	std::unique_ptr<json::streamwriter> jsonwriter(writerbuilder.newstreamwriter());
-	jsonwriter->write(jroot, &os);
-	jsonstr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send leave = " << jsonStr;
-		websocket_->send(jsonStr);
+		websocket_.send(jsonStr);
 	}
 	mutex_.unlock();
 }
 
 bool ZXClient::SendAlive()
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return false;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return false;
 	}
@@ -491,41 +486,40 @@ bool ZXClient::SendAlive()
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonStr;
-	std::ostringstream os;
-	Json::StreamWriterBuilder writerBuilder;
-	std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-	jsonWriter->write(jRoot, &os);
-	jsonStr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send alive = " << jsonStr;
 
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10002;
-		websocket_->send(jsonStr);
-
-		int nCount = 30;
-		while (nCount > 0)
+		if (websocket_.send(jsonStr))
 		{
-			if (nRespOK == 0)
+			int nCount = 30;
+			while (nCount > 0)
 			{
-				mutex_.unlock();
-				return false;
-			}
-			if (nRespOK == 1)
-			{
-				if (bRespResult)
+				if (nRespOK == 0)
 				{
 					mutex_.unlock();
-					return true;
+					return false;
 				}
+				if (nRespOK == 1)
+				{
+					if (bRespResult)
+					{
+						mutex_.unlock();
+						return true;
+					}
+				}
+				if (close_)
+				{
+					mutex_.unlock();
+					return false;
+				}
+				Sleep(100);
+				nCount--;
 			}
-			Sleep(100);
-			nCount--;
 		}
 	}
 	mutex_.unlock();
@@ -534,7 +528,11 @@ bool ZXClient::SendAlive()
 
 bool ZXClient::SendPublish(std::string sdp, bool bAudio, bool bVideo, int videoType)
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return false;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return false;
 	}
@@ -566,41 +564,40 @@ bool ZXClient::SendPublish(std::string sdp, bool bAudio, bool bVideo, int videoT
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonStr;
-	std::ostringstream os;
-	Json::StreamWriterBuilder writerBuilder;
-	std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-	jsonWriter->write(jRoot, &os);
-	jsonStr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send publish = " << jsonStr;
 
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10010;
-		websocket_->send(jsonStr);
-
-		int nCount = 30;
-		while (nCount > 0)
+		if (websocket_.send(jsonStr))
 		{
-			if (nRespOK == 0)
+			int nCount = 30;
+			while (nCount > 0)
 			{
-				mutex_.unlock();
-				return false;
-			}
-			if (nRespOK == 1)
-			{
-				if (bRespResult)
+				if (nRespOK == 0)
 				{
 					mutex_.unlock();
-					return true;
+					return false;
 				}
+				if (nRespOK == 1)
+				{
+					if (bRespResult)
+					{
+						mutex_.unlock();
+						return true;
+					}
+				}
+				if (close_)
+				{
+					mutex_.unlock();
+					return false;
+				}
+				Sleep(100);
+				nCount--;
 			}
-			Sleep(100);
-			nCount--;
 		}
 	}
 	mutex_.unlock();
@@ -609,7 +606,11 @@ bool ZXClient::SendPublish(std::string sdp, bool bAudio, bool bVideo, int videoT
 
 void ZXClient::SendUnPublish(std::string mid, std::string sfuid)
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return;
 	}
@@ -634,25 +635,22 @@ void ZXClient::SendUnPublish(std::string mid, std::string sfuid)
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonStr;
-	std::ostringstream os;
-	Json::StreamWriterBuilder writerBuilder;
-	std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-	jsonWriter->write(jRoot, &os);
-	jsonStr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send unpublish = " << jsonStr;
-		websocket_->send(jsonStr);
+		websocket_.send(jsonStr);
 	}
 	mutex_.unlock();
 }
 
 bool ZXClient::SendSubscribe(std::string sdp, std::string mid, std::string sfuid)
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return false;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return false;
 	}
@@ -683,41 +681,40 @@ bool ZXClient::SendSubscribe(std::string sdp, std::string mid, std::string sfuid
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonStr;
-	std::ostringstream os;
-	Json::StreamWriterBuilder writerBuilder;
-	std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-	jsonWriter->write(jRoot, &os);
-	jsonStr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send subscribe = " << jsonStr;
 
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10015;
-		websocket_->send(jsonStr);
-
-		int nCount = 30;
-		while (nCount > 0)
+		if (websocket_.send(jsonStr))
 		{
-			if (nRespOK == 0)
+			int nCount = 30;
+			while (nCount > 0)
 			{
-				mutex_.unlock();
-				return false;
-			}
-			if (nRespOK == 1)
-			{
-				if (bRespResult)
+				if (nRespOK == 0)
 				{
 					mutex_.unlock();
-					return true;
+					return false;
 				}
+				if (nRespOK == 1)
+				{
+					if (bRespResult)
+					{
+						mutex_.unlock();
+						return true;
+					}
+				}
+				if (close_)
+				{
+					mutex_.unlock();
+					return false;
+				}
+				Sleep(100);
+				nCount--;
 			}
-			Sleep(100);
-			nCount--;
 		}
 	}
 	mutex_.unlock();
@@ -726,7 +723,11 @@ bool ZXClient::SendSubscribe(std::string sdp, std::string mid, std::string sfuid
 
 void ZXClient::SendUnSubscribe(std::string mid, std::string sid, std::string sfuid)
 {
-	if (bClose || pZXEngine == nullptr)
+	if (pZXEngine == nullptr)
+	{
+		return;
+	}
+	if (pZXEngine->strRid == "")
 	{
 		return;
 	}
@@ -752,18 +753,11 @@ void ZXClient::SendUnSubscribe(std::string mid, std::string sid, std::string sfu
 	Json::StyledWriter writer;
 	jsonStr = writer.write(jRoot);
 
-	/*std::string jsonStr;
-	std::ostringstream os;
-	Json::StreamWriterBuilder writerBuilder;
-	std::unique_ptr<Json::StreamWriter> jsonWriter(writerBuilder.newStreamWriter());
-	jsonWriter->write(jRoot, &os);
-	jsonStr = os.str();*/
-
 	mutex_.lock();
-	if (websocket_ != nullptr && GetConnect())
+	if (GetConnect())
 	{
 		RTC_LOG(LS_ERROR) << "websocket send unsubscribe = " << jsonStr;
-		websocket_->send(jsonStr);
+		websocket_.send(jsonStr);
 	}
 	mutex_.unlock();
 }

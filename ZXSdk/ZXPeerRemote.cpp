@@ -3,14 +3,7 @@
 #include "ZXEngine.h"
 #include "ZXPeerRemote.h"
 
-const int create_offer_sdp_ok = 1000;
-const int create_offer_sdp_fail = 1001;
-const int set_offer_sdp_ok = 1002;
-const int set_offer_sdp_fail = 1003;
-const int set_remote_sdp_ok = 1004;
-const int set_remote_sdp_fail = 1005;
-const int sub_send_fail = 1010;
-const int peer_connect_fail = 1011;
+const int set_offer_sdp_ok = 10000;
 
 ZXPeerRemote::ZXPeerRemote()
 {
@@ -23,8 +16,7 @@ ZXPeerRemote::ZXPeerRemote()
 	bClose = false;
 	pZXEngine = nullptr;
 
-	error_ = "";
-	offer_sdp_ = nullptr;
+	sdp_ = "";
 	peer_connection_ = nullptr;
 
 	pOfferCreateSdpObserver = OfferCreateSessionDescriptionObserver::Create();
@@ -35,73 +27,19 @@ ZXPeerRemote::ZXPeerRemote()
 	pAnswerSetSdpObserver->pZXPeerRemote = this;
 }
 
-void ZXPeerRemote::OnMessage(rtc::Message * msg)
-{
-	if (msg->message_id == create_offer_sdp_ok)
-	{
-		SetLocalDescription(offer_sdp_);
-	}
-	if (msg->message_id == create_offer_sdp_fail)
-	{
-		nLive = 0;
-		if (pZXEngine != nullptr) 
-		{
-			pZXEngine->OnPeerSubscribe(strMid, false, error_);
-		}
-	}
-	if (msg->message_id == set_offer_sdp_ok)
-	{
-		std::string sdp_;
-		offer_sdp_->ToString(&sdp_);
-		SendSubscribe(sdp_);
-	}
-	if (msg->message_id == set_offer_sdp_fail)
-	{
-		nLive = 0;
-		if (pZXEngine != nullptr) 
-		{
-			pZXEngine->OnPeerSubscribe(strMid, false, error_);
-		}
-	}
-	if (msg->message_id == set_remote_sdp_ok)
-	{
-		nLive = 3;
-		if (pZXEngine != nullptr) 
-		{
-			pZXEngine->OnPeerSubscribe(strMid, true, "");
-		}
-	}
-	if (msg->message_id == set_remote_sdp_fail)
-	{
-		nLive = 0;
-		if (pZXEngine != nullptr) 
-		{
-			pZXEngine->OnPeerSubscribe(strMid, false, error_);
-		}
-	}
-	if (msg->message_id == sub_send_fail)
-	{
-		nLive = 0;
-		if (pZXEngine != nullptr) 
-		{
-			pZXEngine->OnPeerSubscribe(strMid, false, error_);
-		}
-	}
-	if (msg->message_id == peer_connect_fail)
-	{
-		nLive = 0;
-		if (pZXEngine != nullptr)
-		{
-			pZXEngine->OnPeerSubscribeError(strMid);
-		}
-	}
-}
-
 ZXPeerRemote::~ZXPeerRemote()
 {
 	pOfferCreateSdpObserver = nullptr;
 	pOfferSetSdpObserver = nullptr;
 	pAnswerSetSdpObserver = nullptr;
+}
+
+void ZXPeerRemote::OnMessage(rtc::Message * msg)
+{
+	if (msg->message_id == set_offer_sdp_ok)
+	{
+		SendSubscribe(sdp_);
+	}
 }
 
 void ZXPeerRemote::StartSubscribe()
@@ -128,35 +66,20 @@ void ZXPeerRemote::CreateOffer()
 void ZXPeerRemote::CreateSdpSuc(webrtc::SessionDescriptionInterface * sdp)
 {
 	RTC_LOG(LS_ERROR) << "remote peer create offer sdp ok = " << strMid;
-
 	if (bClose)
 	{
 		return;
 	}
 
-	offer_sdp_ = sdp;
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-	{
-		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, create_offer_sdp_ok);
-	}
+	sdp->ToString(&sdp_);
+	SetLocalDescription(sdp);
 }
 
 void ZXPeerRemote::CreateSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail = " << strMid;
-
-	if (bClose)
-	{
-		return;
-	}
-
-	error_ = error;
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-	{
-		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, create_offer_sdp_fail);
-	}
+	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail mid = " << strMid;
+	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail err = " << error;
+	nLive = 0;
 }
 
 void ZXPeerRemote::SetLocalDescription(webrtc::SessionDescriptionInterface* sdp)
@@ -170,34 +93,22 @@ void ZXPeerRemote::SetLocalDescription(webrtc::SessionDescriptionInterface* sdp)
 void ZXPeerRemote::OnSetLocalSdpSuc()
 {
 	RTC_LOG(LS_ERROR) << "remote peer set offer sdp ok = " << strMid;
-
 	if (bClose)
 	{
 		return;
 	}
-
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
+	if (pZXEngine != nullptr && pZXEngine->g_ws_thread_.get() != nullptr)
 	{
 		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, set_offer_sdp_ok);
+		pZXEngine->g_ws_thread_->Post(loc, this, set_offer_sdp_ok);
 	}
 }
 
 void ZXPeerRemote::OnSetLoaclSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "remote peer set offer sdp fail = " << strMid;
-
-	if (bClose)
-	{
-		return;
-	}
-
-	error_ = error;
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-	{
-		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, set_offer_sdp_fail);
-	}
+	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail mid = " << strMid;
+	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail err = " << error;
+	nLive = 0;
 }
 
 void ZXPeerRemote::SetRemoteDescription(webrtc::SessionDescriptionInterface* sdp)
@@ -211,34 +122,14 @@ void ZXPeerRemote::SetRemoteDescription(webrtc::SessionDescriptionInterface* sdp
 void ZXPeerRemote::OnSetRemoteSdpSuc()
 {
 	RTC_LOG(LS_ERROR) << "remote peer set answer sdp ok = " << strMid;
-
-	if (bClose)
-	{
-		return;
-	}
-
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-	{
-		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, set_remote_sdp_ok);
-	}
+	nLive = 3;
 }
 
 void ZXPeerRemote::OnSetRemoteSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "remote peer set answer sdp fail = " << strMid;
-
-	if (bClose)
-	{
-		return;
-	}
-
-	error_ = error;
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-	{
-		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, set_remote_sdp_fail);
-	}
+	RTC_LOG(LS_ERROR) << "remote peer set answer sdp fail mid = " << strMid;
+	RTC_LOG(LS_ERROR) << "remote peer set answer sdp fail err = " << error;
+	nLive = 0;
 }
 
 bool ZXPeerRemote::InitPeerConnection()
@@ -292,8 +183,7 @@ void ZXPeerRemote::FreePeerConnection()
 	{
 		nLive = 0;
 		bClose = true;
-		error_ = "";
-		offer_sdp_ = nullptr;
+		sdp_ = "";
 		RTC_LOG(LS_ERROR) << "remote peer free start = " << strMid;
 		if (peer_connection_ != nullptr)
 		{
@@ -330,12 +220,7 @@ void ZXPeerRemote::SendSubscribe(std::string sdp)
 		return;
 	}
 
-	error_ = "remote peer send subscribe fail";
-	if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-	{
-		rtc::Location loc(__FUNCTION__, __FILE__);
-		pZXEngine->g_signaling_thread->Post(loc, this, sub_send_fail);
-	}
+	nLive = 0;
 }
 
 void ZXPeerRemote::SendUnSubscribe()
@@ -363,60 +248,12 @@ void ZXPeerRemote::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConne
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kDisconnected)
 	{
 		RTC_LOG(LS_ERROR) << "remote peer kDisconnected = " << strMid;
-		if (bClose)
-		{
-			return;
-		}
-		if (nLive != 0)
-		{
-			if (nLive == 4)
-			{
-				if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-				{
-					rtc::Location loc(__FUNCTION__, __FILE__);
-					pZXEngine->g_signaling_thread->Post(loc, this, peer_connect_fail);
-				}
-			}
-			if (nLive != 4)
-			{
-				error_ = "remote peer ice disconnect";
-				if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-				{
-					rtc::Location loc(__FUNCTION__, __FILE__);
-					pZXEngine->g_signaling_thread->Post(loc, this, sub_send_fail);
-				}
-			}
-			nLive = 0;
-		}
+		nLive = 0;
 	}
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kFailed)
 	{
 		RTC_LOG(LS_ERROR) << "remote peer kFailed = " << strMid;
-		if (bClose)
-		{
-			return;
-		}
-		if (nLive != 0)
-		{
-			if (nLive == 4)
-			{
-				if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-				{
-					rtc::Location loc(__FUNCTION__, __FILE__);
-					pZXEngine->g_signaling_thread->Post(loc, this, peer_connect_fail);
-				}
-			}
-			if (nLive == 3)
-			{
-				error_ = "remote peer ice disconnect";
-				if (pZXEngine != nullptr && pZXEngine->g_signaling_thread != nullptr)
-				{
-					rtc::Location loc(__FUNCTION__, __FILE__);
-					pZXEngine->g_signaling_thread->Post(loc, this, sub_send_fail);
-				}
-			}
-			nLive = 0;
-		}
+		nLive = 0;
 	}
 }
 

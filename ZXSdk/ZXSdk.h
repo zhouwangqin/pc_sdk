@@ -29,26 +29,11 @@ extern "C"
 	// 停止连接
 	WEBRTC_API void stop();
 
-	// 返回连接状态
-	WEBRTC_API bool getConnect();
-
 	// 加入房间
 	WEBRTC_API bool joinRoom(char *rid);
 
 	// 离开房间
 	WEBRTC_API void leaveRoom();
-
-	// 启动推流
-	WEBRTC_API void startPublish();
-
-	// 停止推流
-	WEBRTC_API void stopPublish();
-
-	// 启动拉流
-	WEBRTC_API void startSubscribe(char *uid, char *mid, char *sfu);
-	
-	// 停止拉流
-	WEBRTC_API void stopSubscribe(char *mid);
 
 	// 设置麦克风
 	WEBRTC_API void setMicrophoneMute(bool mute);

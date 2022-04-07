@@ -43,18 +43,6 @@ public:
 	// 离开房间
 	void leaveRoom();
 
-	// 启动推流
-	void startPublish();
-
-	// 停止推流
-	void stopPublish();
-
-	// 启动拉流
-	void startSubscribe(std::string uid, std::string mid, std::string sfu);
-
-	// 停止拉流
-	void stopSubscribe(std::string mid);
-
 	// 设置麦克风
 	void setMicrophoneMute(bool bMute);
 
@@ -73,7 +61,7 @@ public:
 	void respPeerLeave(Json::Value jsonObject);
 
 	// 处理有流加入的通知
-   // json (rid, uid, mid, sfuid, minfo)
+	// json (rid, uid, mid, sfuid, minfo)
 	void respStreamAdd(Json::Value jsonObject);
 
 	// 处理有流移除的通知
@@ -101,22 +89,52 @@ private:
 	bool initPeerConnectionFactory();
 	void freePeerConnectionFactory();
 
-	// 释放对象
-	void freeLocalPeer();
+	// 启动推流
+	void startPublish();
+	// 停止推流
+	void stopPublish();
+	// 启动拉流
+	void startSubscribe(std::string uid, std::string mid, std::string sfu);
+	// 停止拉流
+	void stopSubscribe(std::string mid);
+	// 停止所有拉流
 	void freeAllRemotePeer();
+
+	// 线程
+	void StartWorkThread();
+	void StopWorkThread();
+	void StartHeatThread();
+	void StopHeatThread();
+	static DWORD WINAPI WorkThreadFunc(LPVOID data);
+	static DWORD WINAPI HeatThreadFunc(LPVOID data);
 
 public:
 	// 基本参数
-	bool bLogin;
 	std::string strUid;
 	std::string strRid;
 	std::string strUrl;
+
+	// 状态参数
+	bool room_close_;
+	bool socket_close_;
+
+	// 连接状态
+	int mStatus;
+	// 心跳状态
+	bool bHeatOk;
+	// 线程对象
+	bool bWorkExit;
+	bool bHeatExit;
+	HANDLE hWorkThread;
+	HANDLE hHeatThread;
 
 	// 回调对象
 	msg_callback mListen;
 
 	// 信令对象
 	ZXClient mZXClient;
+	Json::Value json_add_;
+	Json::Value json_remove_;
 
 	// 推拉流对象
 	ZXPeerLocal mLocalPeer;

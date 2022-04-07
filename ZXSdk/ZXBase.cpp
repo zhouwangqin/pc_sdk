@@ -6,11 +6,16 @@ const char kAudioLabel[] = "ARDAMSa0";
 const char kVideoLabel[] = "ARDAMSv0";
 
 // 信令服务器地址
-uint16_t g_server_port = 10443;
-std::string g_server_ip = "120.238.78.213";
-
+uint16_t g_server_port = 8443;
+//std::string g_server_ip = "120.238.78.213";
+std::string g_server_ip = "49.235.93.74";
 // 转发服务器地址
 std::string g_relay_server_ip = "120.238.78.214:3478";
+
+// 事件定义
+const int socket_disconnet_ = 1000;
+const int stream_add_ = 1010;
+const int stream_remove_ = 1020;
 
 // 视频VP8编码参数
 const std::string VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";

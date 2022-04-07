@@ -78,8 +78,7 @@ public:
 
 private:
 	// offer sdp
-	std::string error_;
-	webrtc::SessionDescriptionInterface* offer_sdp_;
+	std::string sdp_;
 	// rtc ∂‘œÛ
 	rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;

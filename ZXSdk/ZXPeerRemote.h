@@ -36,6 +36,16 @@ public:
 	// 设置远端sdp失败
 	void OnSetRemoteSdpFail(std::string error);
 
+	// 发送订阅
+	void SendSubscribe(std::string sdp);
+	// 发送取消订阅
+	void SendUnSubscribe();
+
+private:
+	// PeerConnection对象
+	bool InitPeerConnection();
+	void FreePeerConnection();
+
 	//
 	// PeerConnectionObserver implementation.
 	//
@@ -49,16 +59,6 @@ public:
 
 	// MessageHandler implementation
 	void OnMessage(rtc::Message* msg) override;
-
-private:
-	// PeerConnection对象
-	bool InitPeerConnection();
-	void FreePeerConnection();
-
-	// 发送推流
-	void SendSubscribe(std::string sdp);
-	// 发送取消推流
-	void SendUnSubscribe();
 
 public:
 	// 参数
@@ -76,8 +76,7 @@ public:
 
 private:
 	// offer sdp
-	std::string error_;
-	webrtc::SessionDescriptionInterface* offer_sdp_;
+	std::string sdp_;
 	// rtc 对象
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
 

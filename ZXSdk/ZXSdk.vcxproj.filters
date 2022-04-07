@@ -54,7 +54,7 @@
     <ClInclude Include="ZXClient.h">
       <Filter>sdk\ws</Filter>
     </ClInclude>
-    <ClInclude Include="easywsclient.hpp">
+    <ClInclude Include="WebSocket.h">
       <Filter>sdk\ws</Filter>
     </ClInclude>
   </ItemGroup>
@@ -80,11 +80,11 @@
     <ClCompile Include="ZXClient.cpp">
       <Filter>sdk\ws</Filter>
     </ClCompile>
-    <ClCompile Include="easywsclient.cpp">
-      <Filter>sdk\ws</Filter>
-    </ClCompile>
     <ClCompile Include="ZXBase.cpp">
       <Filter>sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="WebSocket.cpp">
+      <Filter>sdk\ws</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

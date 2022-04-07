@@ -158,7 +158,7 @@
       <PreprocessorDefinitions>NDEBUG;_LIB;NOMINMAX;WEBRTC_WIN;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>E:\work\webrtc\webrtc_windows_m72\src;E:\work\webrtc\webrtc_windows_m72\src\third_party\abseil-cpp;E:\work\webrtc\webrtc_windows_m72\src\third_party\libyuv\include;E:\work\webrtc\webrtc_windows_m72\src\third_party\jsoncpp\source\include;E:\work\webrtc\webrtc_windows_m72\src\third_party\jsoncpp\generated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>E:\work\webrtc\webrtc_windows_m72\src;E:\work\webrtc\webrtc_windows_m72\src\third_party\abseil-cpp;E:\work\webrtc\webrtc_windows_m72\src\third_party\libyuv\include;E:\work\webrtc\webrtc_windows_m72\src\third_party\jsoncpp\source\include;E:\work\webrtc\webrtc_windows_m72\src\third_party\jsoncpp\generated;D:\local\websocketpp-0.8.2;D:\local\boost_1_67_0</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -166,9 +166,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>field_trial.obj;json.obj;json_reader.obj;json_writer.obj;json_value.obj;webrtc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>E:\work\fangte\client\pc\pc_sdk\lib\x64_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>field_trial.obj;json.obj;json_reader.obj;json_writer.obj;json_value.obj;webrtc.lib;libboost_system-vc141-mt-s-x64-1_67.lib;libboost_thread-vc141-mt-s-x64-1_67.lib;libboost_random-vc141-mt-s-x64-1_67.lib;libboost_unit_test_framework-vc141-mt-s-x64-1_67.lib;libboost_chrono-vc141-mt-s-x64-1_67.lib;libboost_date_time-vc141-mt-s-x64-1_67.lib;libboost_atomic-vc141-mt-s-x64-1_67.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>E:\work\fangte\client\pc\pc_sdk\lib\x64_release;D:\local\boost_1_67_0\bin\vc141-x64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>E:\work\fangte\client\pc\ZXRTC\lib\x64_release</AdditionalLibraryDirectories>
@@ -176,9 +178,9 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="easywsclient.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="WebSocket.h" />
     <ClInclude Include="ZXClient.h" />
     <ClInclude Include="ZXBase.h" />
     <ClInclude Include="ZXEngine.h" />
@@ -189,13 +191,13 @@
     <ClInclude Include="ZXSdpListen.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="easywsclient.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="WebSocket.cpp" />
     <ClCompile Include="ZXBase.cpp" />
     <ClCompile Include="ZXClient.cpp" />
     <ClCompile Include="ZXEngine.cpp" />
