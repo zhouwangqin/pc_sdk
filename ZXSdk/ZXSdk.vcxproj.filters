@@ -22,6 +22,9 @@
     <Filter Include="sdk\ws">
       <UniqueIdentifier>{1fade5a7-7404-436b-86a9-f78de0310573}</UniqueIdentifier>
     </Filter>
+    <Filter Include="sdk\source">
+      <UniqueIdentifier>{7a4498db-f141-49a5-8339-6bdfa868d184}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -57,6 +60,15 @@
     <ClInclude Include="WebSocket.h">
       <Filter>sdk\ws</Filter>
     </ClInclude>
+    <ClInclude Include="ZXScreen.h">
+      <Filter>sdk\source</Filter>
+    </ClInclude>
+    <ClInclude Include="ZXPeerScreen.h">
+      <Filter>sdk\peer</Filter>
+    </ClInclude>
+    <ClInclude Include="ZXVideo.h">
+      <Filter>sdk\source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -85,6 +97,15 @@
     </ClCompile>
     <ClCompile Include="WebSocket.cpp">
       <Filter>sdk\ws</Filter>
+    </ClCompile>
+    <ClCompile Include="ZXScreen.cpp">
+      <Filter>sdk\source</Filter>
+    </ClCompile>
+    <ClCompile Include="ZXPeerScreen.cpp">
+      <Filter>sdk\peer</Filter>
+    </ClCompile>
+    <ClCompile Include="ZXVideo.cpp">
+      <Filter>sdk\source</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

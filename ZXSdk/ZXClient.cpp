@@ -70,7 +70,7 @@ void ZXClient::OnDataRecv(const std::string message)
 	Json::Reader reader;
 	if (!reader.parse(message, jRoot))
 	{
-		RTC_LOG(LS_ERROR) << "recv data = " << message << ", error = ";// << jErrs;
+		RTC_LOG(LS_ERROR) << "recv data = " << message;
 		return;
 	}
 

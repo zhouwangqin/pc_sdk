@@ -3,8 +3,6 @@
 #include "ZXEngine.h"
 #include "ZXPeerLocal.h"
 
-const int set_offer_sdp_ok = 10000;
-
 ZXPeerLocal::ZXPeerLocal()
 {
 	strUid = "";
@@ -56,10 +54,19 @@ void ZXPeerLocal::StopPublish()
 
 void ZXPeerLocal::SetAudioEnable(bool bEnable)
 {
-	if (audio_track_ != NULL)
+	if (audio_track_ != nullptr)
 	{
 		audio_track_->set_enabled(bEnable);
 	}
+}
+
+bool ZXPeerLocal::GetAudioEnable()
+{
+	if (audio_track_ != nullptr)
+	{
+		return audio_track_->enabled();
+	}
+	return false;
 }
 
 void ZXPeerLocal::CreateOffer()
@@ -150,7 +157,7 @@ bool ZXPeerLocal::InitPeerConnection()
 	config.set_cpu_adaptation(true);
 	config.bundle_policy = webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
 	config.tcp_candidate_policy = webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
-	config.continual_gathering_policy = webrtc::PeerConnectionInterface::GATHER_CONTINUALLY;
+	config.continual_gathering_policy = webrtc::PeerConnectionInterface::GATHER_ONCE;
 	// ≈‰÷√ICE
 	webrtc::PeerConnectionInterface::IceServer stunServer;
 	stunServer.uri = "stun:" + g_relay_server_ip;

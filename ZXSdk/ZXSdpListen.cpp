@@ -1,11 +1,13 @@
 #include "pch.h"
 #include "ZXSdpListen.h"
 #include "ZXPeerLocal.h"
+#include "ZXPeerScreen.h"
 #include "ZXPeerRemote.h"
 
 OfferCreateSessionDescriptionObserver::OfferCreateSessionDescriptionObserver()
 {
 	pZXPeerLocal = nullptr;
+	pZXPeerScreen = nullptr;
 	pZXPeerRemote = nullptr;
 }
 
@@ -25,6 +27,10 @@ void OfferCreateSessionDescriptionObserver::OnSuccess(webrtc::SessionDescription
 	{
 		pZXPeerLocal->CreateSdpSuc(desc);
 	}
+	if (pZXPeerScreen != nullptr && desc != nullptr)
+	{
+		pZXPeerScreen->CreateSdpSuc(desc);
+	}
 	if (pZXPeerRemote != nullptr && desc != nullptr)
 	{
 		pZXPeerRemote->CreateSdpSuc(desc);
@@ -37,6 +43,10 @@ void OfferCreateSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 	{
 		pZXPeerLocal->CreateSdpFail(error.message());
 	}
+	if (pZXPeerScreen != nullptr)
+	{
+		pZXPeerScreen->CreateSdpFail(error.message());
+	}
 	if (pZXPeerRemote != nullptr)
 	{
 		pZXPeerRemote->CreateSdpFail(error.message());
@@ -46,6 +56,7 @@ void OfferCreateSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 OfferSetSessionDescriptionObserver::OfferSetSessionDescriptionObserver()
 {
 	pZXPeerLocal = nullptr;
+	pZXPeerScreen = nullptr;
 	pZXPeerRemote = nullptr;
 }
 
@@ -65,6 +76,10 @@ void OfferSetSessionDescriptionObserver::OnSuccess()
 	{
 		pZXPeerLocal->OnSetLocalSdpSuc();
 	}
+	if (pZXPeerScreen != nullptr)
+	{
+		pZXPeerScreen->OnSetLocalSdpSuc();
+	}
 	if (pZXPeerRemote != nullptr)
 	{
 		pZXPeerRemote->OnSetLocalSdpSuc();
@@ -77,6 +92,10 @@ void OfferSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 	{
 		pZXPeerLocal->OnSetLoaclSdpFail(error.message());
 	}
+	if (pZXPeerScreen != nullptr)
+	{
+		pZXPeerScreen->OnSetLoaclSdpFail(error.message());
+	}
 	if (pZXPeerRemote != nullptr)
 	{
 		pZXPeerRemote->OnSetLoaclSdpFail(error.message());
@@ -86,6 +105,7 @@ void OfferSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 AnswerSetSessionDescriptionObserver::AnswerSetSessionDescriptionObserver()
 {
 	pZXPeerLocal = nullptr;
+	pZXPeerScreen = nullptr;
 	pZXPeerRemote = nullptr;
 }
 
@@ -105,6 +125,10 @@ void AnswerSetSessionDescriptionObserver::OnSuccess()
 	{
 		pZXPeerLocal->OnSetRemoteSdpSuc();
 	}
+	if (pZXPeerScreen != nullptr)
+	{
+		pZXPeerScreen->OnSetRemoteSdpSuc();
+	}
 	if (pZXPeerRemote != nullptr)
 	{
 		pZXPeerRemote->OnSetRemoteSdpSuc();
@@ -116,6 +140,10 @@ void AnswerSetSessionDescriptionObserver::OnFailure(webrtc::RTCError error)
 	if (pZXPeerLocal != nullptr)
 	{
 		pZXPeerLocal->OnSetRemoteSdpFail(error.message());
+	}
+	if (pZXPeerScreen != nullptr)
+	{
+		pZXPeerScreen->OnSetRemoteSdpFail(error.message());
 	}
 	if (pZXPeerRemote != nullptr)
 	{

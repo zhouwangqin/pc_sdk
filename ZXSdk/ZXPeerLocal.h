@@ -17,6 +17,7 @@ public:
 
 	// 设置发送音视频可用
 	void SetAudioEnable(bool bEnable);
+	bool GetAudioEnable();
 
 	// 创建Offer
 	void CreateOffer();
@@ -87,6 +88,5 @@ private:
 	rtc::scoped_refptr<OfferCreateSessionDescriptionObserver> pOfferCreateSdpObserver;
 	rtc::scoped_refptr<OfferSetSessionDescriptionObserver> pOfferSetSdpObserver;
 	rtc::scoped_refptr<AnswerSetSessionDescriptionObserver> pAnswerSetSdpObserver;
-
 };
 

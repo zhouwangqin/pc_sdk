@@ -1,4 +1,5 @@
 #pragma once
+#include "ZXVideo.h"
 #include "ZXSdpListen.h"
 #include "api/peerconnectioninterface.h"
 
@@ -50,6 +51,7 @@ private:
 	// PeerConnectionObserver implementation.
 	//
 	void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override {}
+	void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 	void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
 	void OnRenegotiationNeeded() override {}
 	void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override {}
@@ -73,6 +75,8 @@ public:
 	bool bClose;
 	// 上层对象
 	ZXEngine* pZXEngine;
+	// 视频回调对象
+	std::unique_ptr<ZXVideoObserver> remote_video_observer_;
 
 private:
 	// offer sdp

@@ -3,6 +3,7 @@
 #include "ZXListen.h"
 #include "ZXClient.h"
 #include "ZXPeerLocal.h"
+#include "ZXPeerScreen.h"
 #include "ZXPeerRemote.h"
 #include "rtc_base/strings/json.h"
 #include "api/peerconnectioninterface.h"
@@ -13,16 +14,16 @@ public:
 	ZXEngine();
 	virtual ~ZXEngine();
 
-	// MessageHandler implementation
-	void OnMessage(rtc::Message* msg) override;
-
-	// 设置信令服务器地址
+	// 设置服务器地址
 	void setServerIp(std::string ip, uint16_t port);
 
-	// 设置sdk回调
-	void setSdkListen(msg_callback observer);
+	// 设置本地视频流回调
+	void setLocalVideo(video_frame_callback callback);
 
-	// 初始化sdk
+	// 设置远端视频流回调
+	void setRemoteVideo(video_frame_callback callback);
+
+	// 加载sdk
 	bool initSdk(std::string uid);
 
 	// 释放sdk
@@ -34,20 +35,28 @@ public:
 	// 停止连接
 	void stop();
 
-	// 返回连接状态
-	bool getConnect();
-
 	// 加入房间
 	bool joinRoom(std::string rid);
 
 	// 离开房间
 	void leaveRoom();
 
+	// 设置是否推流
+	void setPublish(bool bPub);
+
+	// 设置是否屏幕共享
+	void setScreen(bool bPub);
+	void setFrameRate(int nFrameRate);
+
 	// 设置麦克风
 	void setMicrophoneMute(bool bMute);
 
 	// 获取麦克风状态
 	bool getMicrophoneMute();
+
+	/*
+		处理消息回调
+	*/
 
 	// 处理socket断开消息
 	void respSocketEvent();
@@ -72,19 +81,10 @@ public:
 	// json (rid, uid)
 	void respPeerKick(Json::Value jsonObject);
 
-	// 推流回调
-	void OnPeerPublish(bool bSuc, std::string error);
-
-	// 推流连接断开回调
-	void OnPeerPublishError();
-
-	// 拉流回调
-	void OnPeerSubscribe(std::string mid, bool bSuc, std::string error);
-
-	// 拉流连接断开回调
-	void OnPeerSubscribeError(std::string mid);
-
 private:
+	// MessageHandler implementation
+	void OnMessage(rtc::Message* msg) override;
+
 	// PeerConnectionFactory对象
 	bool initPeerConnectionFactory();
 	void freePeerConnectionFactory();
@@ -93,6 +93,12 @@ private:
 	void startPublish();
 	// 停止推流
 	void stopPublish();
+
+	// 启动屏幕推流
+	void startScreen();
+	// 停止屏幕推流
+	void stopScreen();
+
 	// 启动拉流
 	void startSubscribe(std::string uid, std::string mid, std::string sfu);
 	// 停止拉流
@@ -114,9 +120,12 @@ public:
 	std::string strRid;
 	std::string strUrl;
 
-	// 状态参数
-	bool room_close_;
-	bool socket_close_;
+	// 推流标记
+	bool bPublish;
+	bool bScreen;
+	// 关闭标记
+	bool bRoomClose;
+	bool bSocketClose;
 
 	// 连接状态
 	int mStatus;
@@ -128,16 +137,16 @@ public:
 	HANDLE hWorkThread;
 	HANDLE hHeatThread;
 
-	// 回调对象
-	msg_callback mListen;
+	// 帧回调对象
+	video_frame_callback local_callback_;
+	video_frame_callback remote_callback_;
 
 	// 信令对象
 	ZXClient mZXClient;
-	Json::Value json_add_;
-	Json::Value json_remove_;
 
 	// 推拉流对象
 	ZXPeerLocal mLocalPeer;
+	ZXPeerScreen mScreenPeer;
 	std::map<std::string, ZXPeerRemote*> vtRemotePeers;
 	std::mutex mutex;
 

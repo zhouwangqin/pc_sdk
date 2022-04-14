@@ -187,8 +187,11 @@
     <ClInclude Include="ZXListen.h" />
     <ClInclude Include="ZXPeerLocal.h" />
     <ClInclude Include="ZXPeerRemote.h" />
+    <ClInclude Include="ZXPeerScreen.h" />
+    <ClInclude Include="ZXScreen.h" />
     <ClInclude Include="ZXSdk.h" />
     <ClInclude Include="ZXSdpListen.h" />
+    <ClInclude Include="ZXVideo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -203,8 +206,11 @@
     <ClCompile Include="ZXEngine.cpp" />
     <ClCompile Include="ZXPeerLocal.cpp" />
     <ClCompile Include="ZXPeerRemote.cpp" />
+    <ClCompile Include="ZXPeerScreen.cpp" />
+    <ClCompile Include="ZXScreen.cpp" />
     <ClCompile Include="ZXSdk.cpp" />
     <ClCompile Include="ZXSdpListen.cpp" />
+    <ClCompile Include="ZXVideo.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

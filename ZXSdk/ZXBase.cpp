@@ -14,8 +14,7 @@ std::string g_relay_server_ip = "120.238.78.214:3478";
 
 // 事件定义
 const int socket_disconnet_ = 1000;
-const int stream_add_ = 1010;
-const int stream_remove_ = 1020;
+const int set_offer_sdp_ok = 10000;
 
 // 视频VP8编码参数
 const std::string VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";

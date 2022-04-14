@@ -42,8 +42,6 @@ bool WebSocketClient::open(const std::string uri)
 	m_endpoint->set_close_handler(bind(&WebSocketClient::onClose, this, _1));
 	m_endpoint->set_fail_handler(bind(&WebSocketClient::onFail, this, _1));
 
-	//m_endpoint->start_perpetual();
-
 	websocketpp::lib::error_code ec;
 	client::connection_ptr con = m_endpoint->get_connection(uri, ec);
 	if (ec)
@@ -100,7 +98,6 @@ void WebSocketClient::close()
 		{
 			RTC_LOG(LS_ERROR) << e.what();
 		}
-		//m_endpoint->stop_perpetual();
 		m_endpoint.reset();
 	}
 }

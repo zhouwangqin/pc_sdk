@@ -2,6 +2,7 @@
 #include "api/peerconnectioninterface.h"
 
 class ZXPeerLocal;
+class ZXPeerScreen;
 class ZXPeerRemote;
 class OfferCreateSessionDescriptionObserver : public webrtc::CreateSessionDescriptionObserver
 {
@@ -16,6 +17,7 @@ public:
 
 public:
 	ZXPeerLocal *pZXPeerLocal;
+	ZXPeerScreen *pZXPeerScreen;
 	ZXPeerRemote *pZXPeerRemote;
 };
 
@@ -32,6 +34,7 @@ public:
 
 public:
 	ZXPeerLocal *pZXPeerLocal;
+	ZXPeerScreen *pZXPeerScreen;
 	ZXPeerRemote *pZXPeerRemote;
 };
 
@@ -48,5 +51,6 @@ public:
 
 public:
 	ZXPeerLocal *pZXPeerLocal;
+	ZXPeerScreen *pZXPeerScreen;
 	ZXPeerRemote *pZXPeerRemote;
 };

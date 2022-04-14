@@ -11,13 +11,16 @@
 extern "C"
 {
 #endif
-	// 设置服务器
+	// 设置服务器地址
 	WEBRTC_API void setServerIp(char *ip, unsigned short port);
 
-	// 设置sdk回调
-	WEBRTC_API void setSdkListen(msg_callback observer);
+	// 设置本地视频流回调
+	WEBRTC_API void setLocalVideo(video_frame_callback callback);
+	
+	// 设置远端视频流回调
+	WEBRTC_API void setRemoteVideo(video_frame_callback callback);
 
-	// 初始化sdk
+	// 加载sdk
 	WEBRTC_API bool initSdk(char *uid);
 
 	// 释放sdk
@@ -34,6 +37,13 @@ extern "C"
 
 	// 离开房间
 	WEBRTC_API void leaveRoom();
+
+	// 设置是否推流
+	WEBRTC_API void setPublish(bool bPub);
+
+	// 设置是否屏幕共享和帧率(5-30)
+	WEBRTC_API void setScreen(bool bPub);
+	WEBRTC_API void setFrameRate(int nFrameRate);
 
 	// 设置麦克风
 	WEBRTC_API void setMicrophoneMute(bool mute);
