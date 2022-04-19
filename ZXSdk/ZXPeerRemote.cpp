@@ -142,7 +142,7 @@ bool ZXPeerRemote::InitPeerConnection()
 	config.set_cpu_adaptation(true);
 	config.bundle_policy = webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
 	config.tcp_candidate_policy = webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
-	config.continual_gathering_policy = webrtc::PeerConnectionInterface::GATHER_ONCE;
+	config.continual_gathering_policy = webrtc::PeerConnectionInterface::GATHER_CONTINUALLY;
 	// ≈‰÷√ICE
 	webrtc::PeerConnectionInterface::IceServer stunServer;
 	stunServer.uri = "stun:" + g_relay_server_ip;

@@ -627,6 +627,8 @@ DWORD WINAPI ZXEngine::HeatThreadFunc(LPVOID data)
 		else if (pZXEngine->mStatus == 2)
 		{
 			nCount = 200;
+			pZXEngine->mZXClient.SendAlive();
+			/*
 			static int nTmp = 0;
 			bool bSuc = pZXEngine->mZXClient.SendAlive();
 			if (bSuc)
@@ -643,7 +645,7 @@ DWORD WINAPI ZXEngine::HeatThreadFunc(LPVOID data)
 				pZXEngine->mStatus = 0;
 				// Õ£÷πsocket
 				pZXEngine->mZXClient.Stop();
-			}
+			}*/
 		}
 		// —” ±
 		for (int i = 0; i < nCount; i++)

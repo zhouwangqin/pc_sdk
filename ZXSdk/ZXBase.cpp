@@ -6,9 +6,9 @@ const char kAudioLabel[] = "ARDAMSa0";
 const char kVideoLabel[] = "ARDAMSv0";
 
 // 信令服务器地址
-uint16_t g_server_port = 8443;
-//std::string g_server_ip = "120.238.78.213";
-std::string g_server_ip = "49.235.93.74";
+uint16_t g_server_port = 10443;
+std::string g_server_ip = "120.238.78.213";
+//std::string g_server_ip = "49.235.93.74";
 // 转发服务器地址
 std::string g_relay_server_ip = "120.238.78.214:3478";
 
