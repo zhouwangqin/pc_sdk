@@ -31,6 +31,7 @@ ZXPeerRemote::~ZXPeerRemote()
 	pOfferCreateSdpObserver = nullptr;
 	pOfferSetSdpObserver = nullptr;
 	pAnswerSetSdpObserver = nullptr;
+	remote_video_observer_.reset();
 }
 
 void ZXPeerRemote::OnMessage(rtc::Message * msg)
@@ -58,13 +59,16 @@ void ZXPeerRemote::CreateOffer()
 	if (peer_connection_ != nullptr)
 	{
 		webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
+		options.offer_to_receive_audio = true;
+		options.offer_to_receive_video = true;
 		peer_connection_->CreateOffer(pOfferCreateSdpObserver, options);
 	}
 }
 
 void ZXPeerRemote::CreateSdpSuc(webrtc::SessionDescriptionInterface * sdp)
 {
-	RTC_LOG(LS_ERROR) << "remote peer create offer sdp ok = " << strMid;
+	std::string msg = "remote peer create offer sdp ok = " + strMid;
+	ZXEngine::writeLog(msg);
 	if (bClose)
 	{
 		return;
@@ -76,8 +80,9 @@ void ZXPeerRemote::CreateSdpSuc(webrtc::SessionDescriptionInterface * sdp)
 
 void ZXPeerRemote::CreateSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail mid = " << strMid;
-	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail err = " << error;
+	std::string msg = "remote peer create offer sdp fail mid = " + strMid + ", err = " + error;
+	ZXEngine::writeLog(msg);
+
 	nLive = 0;
 }
 
@@ -91,11 +96,13 @@ void ZXPeerRemote::SetLocalDescription(webrtc::SessionDescriptionInterface* sdp)
 
 void ZXPeerRemote::OnSetLocalSdpSuc()
 {
-	RTC_LOG(LS_ERROR) << "remote peer set offer sdp ok = " << strMid;
+	std::string msg = "remote peer set offer sdp ok = " + strMid;
+	ZXEngine::writeLog(msg);
 	if (bClose)
 	{
 		return;
 	}
+
 	if (pZXEngine != nullptr && pZXEngine->g_ws_thread_.get() != nullptr)
 	{
 		rtc::Location loc(__FUNCTION__, __FILE__);
@@ -105,8 +112,9 @@ void ZXPeerRemote::OnSetLocalSdpSuc()
 
 void ZXPeerRemote::OnSetLoaclSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail mid = " << strMid;
-	RTC_LOG(LS_ERROR) << "remote peer create offer sdp fail err = " << error;
+	std::string msg = "remote peer set offer sdp fail mid = " + strMid + ", err = " + error;
+	ZXEngine::writeLog(msg);
+
 	nLive = 0;
 }
 
@@ -120,14 +128,21 @@ void ZXPeerRemote::SetRemoteDescription(webrtc::SessionDescriptionInterface* sdp
 
 void ZXPeerRemote::OnSetRemoteSdpSuc()
 {
-	RTC_LOG(LS_ERROR) << "remote peer set answer sdp ok = " << strMid;
+	std::string msg = "remote peer set answer sdp ok = " + strMid;
+	ZXEngine::writeLog(msg);
+	if (bClose)
+	{
+		return;
+	}
+
 	nLive = 3;
 }
 
 void ZXPeerRemote::OnSetRemoteSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "remote peer set answer sdp fail mid = " << strMid;
-	RTC_LOG(LS_ERROR) << "remote peer set answer sdp fail err = " << error;
+	std::string msg = "remote peer set answer sdp fail mid = " + strMid + ", err = " + error;
+	ZXEngine::writeLog(msg);
+
 	nLive = 0;
 }
 
@@ -160,42 +175,51 @@ bool ZXPeerRemote::InitPeerConnection()
 	// ´´½¨peer
 	if (pZXEngine != nullptr && pZXEngine->peer_connection_factory_ != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "remote peer create start = " << strMid;
+		std::string msg = "remote peer create start = " + strMid;
+		ZXEngine::writeLog(msg);
+
 		peer_connection_ = pZXEngine->peer_connection_factory_->CreatePeerConnection(config, nullptr, nullptr, this);
 		if (peer_connection_ != nullptr)
 		{
 			peer_connection_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_AUDIO);
 			peer_connection_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO);
-			if (remote_video_observer_)
+			if (remote_video_observer_.get() != nullptr)
 			{
 				remote_video_observer_->SetVideoCallback(pZXEngine->remote_callback_, (char*)(strUid.c_str()), 1);
 			}
 
 			nLive = 1;
 			bClose = false;
-			RTC_LOG(LS_ERROR) << "remote peer create stop = " << strMid;
+
+			std::string msg = "remote peer create stop = " + strMid;
+			ZXEngine::writeLog(msg);
 			return true;
 		}
-		RTC_LOG(LS_ERROR) << "remote peer create stop = " << strMid;
+		msg = "remote peer create stop1 = " + strMid;
+		ZXEngine::writeLog(msg);
 	}
 	return false;
 }
 
 void ZXPeerRemote::FreePeerConnection()
 {
-	if (!bClose)
+	if (bClose)
 	{
-		nLive = 0;
-		bClose = true;
-		sdp_ = "";
-		RTC_LOG(LS_ERROR) << "remote peer free start = " << strMid;
-		if (peer_connection_ != nullptr)
-		{
-			peer_connection_->Close();
-			peer_connection_ = nullptr;
-		}
-		RTC_LOG(LS_ERROR) << "remote peer free stop = " << strMid;
+		return;
 	}
+
+	nLive = 0;
+	bClose = true;
+	sdp_ = "";
+	std::string msg = "remote peer free start = " + strMid;
+	ZXEngine::writeLog(msg);
+	if (peer_connection_ != nullptr)
+	{
+		peer_connection_->Close();
+		peer_connection_ = nullptr;
+	}
+	msg = "remote peer free stop = " + strMid;
+	ZXEngine::writeLog(msg);
 }
 
 void ZXPeerRemote::SendSubscribe(std::string sdp)
@@ -244,7 +268,7 @@ void ZXPeerRemote::SendUnSubscribe()
 
 void ZXPeerRemote::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-	if (remote_video_observer_ && !stream->GetVideoTracks().empty())
+	if (remote_video_observer_.get() != nullptr && !stream->GetVideoTracks().empty())
 	{
 		stream->GetVideoTracks()[0]->AddOrUpdateSink(remote_video_observer_.get(), rtc::VideoSinkWants());
 	}
@@ -254,17 +278,20 @@ void ZXPeerRemote::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConne
 {
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kConnected)
 	{
-		RTC_LOG(LS_ERROR) << "remote peer kConnected = " << strMid;
+		std::string msg = "remote peer kConnected = " + strMid;
+		ZXEngine::writeLog(msg);
 		nLive = 4;
 	}
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kDisconnected)
 	{
-		RTC_LOG(LS_ERROR) << "remote peer kDisconnected = " << strMid;
+		std::string msg = "remote peer kDisconnected = " + strMid;
+		ZXEngine::writeLog(msg);
 		nLive = 0;
 	}
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kFailed)
 	{
-		RTC_LOG(LS_ERROR) << "remote peer kFailed = " << strMid;
+		std::string msg = "remote peer kFailed = " + strMid;
+		ZXEngine::writeLog(msg);
 		nLive = 0;
 	}
 }

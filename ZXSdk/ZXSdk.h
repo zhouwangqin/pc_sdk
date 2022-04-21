@@ -11,6 +11,9 @@
 extern "C"
 {
 #endif
+	// 设置日志输出
+	WEBRTC_API void setLogDebug(log_callback callback);
+
 	// 设置服务器地址
 	WEBRTC_API void setServerIp(char *ip, unsigned short port);
 

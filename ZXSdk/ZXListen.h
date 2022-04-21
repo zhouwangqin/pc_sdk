@@ -8,3 +8,6 @@ typedef void(*video_frame_callback)(const char* uid, int video_type, const unsig
 
 // audio frame callback
 typedef void(*audio_frame_callback)(const char* uid, const void* audio_data, int bits_per_sample, int sample_rate, int number_of_channels, int number_of_frames);
+
+// log callback
+typedef void(*log_callback)(const char* msg);

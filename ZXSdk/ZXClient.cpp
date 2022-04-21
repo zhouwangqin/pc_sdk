@@ -3,8 +3,9 @@
 #include "ZXEngine.h"
 #include "rtc_base/strings/json.h"
 
-#include <cstdlib>
-#define random(a,b) (rand()%(b-a)+a)
+#include <random>
+std::default_random_engine engine;
+#define random(a,b) (engine()%(b-a)+a)
 
 ZXClient::ZXClient()
 {
@@ -59,7 +60,8 @@ void ZXClient::onFail(const std::string & err)
 
 void ZXClient::OnDataRecv(const std::string message)
 {
-	RTC_LOG(LS_ERROR) << "websocket recv = " << message;
+	std::string msg = "websocket recv = " + message;
+	ZXEngine::writeLog(msg);
 
 	if (close_)
 	{
@@ -70,7 +72,7 @@ void ZXClient::OnDataRecv(const std::string message)
 	Json::Reader reader;
 	if (!reader.parse(message, jRoot))
 	{
-		RTC_LOG(LS_ERROR) << "recv data = " << message;
+		ZXEngine::writeLog("recv data parse error");
 		return;
 	}
 
@@ -81,7 +83,7 @@ void ZXClient::OnDataRecv(const std::string message)
 		int nId = 0;
 		if (!rtc::GetIntFromJsonObject(jRoot, "id", &nId))
 		{
-			RTC_LOG(LS_ERROR) << "recv data id error";
+			ZXEngine::writeLog("recv data id error");
 			return;
 		}
 
@@ -90,7 +92,7 @@ void ZXClient::OnDataRecv(const std::string message)
 			bool bOK = false;
 			if (!rtc::GetBoolFromJsonObject(jRoot, "ok", &bOK))
 			{
-				RTC_LOG(LS_ERROR) << "recv data ok error";
+				ZXEngine::writeLog("recv data ok error");
 				return;
 			}
 
@@ -104,28 +106,28 @@ void ZXClient::OnDataRecv(const std::string message)
 					Json::Value jData;
 					if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 					{
-						RTC_LOG(LS_ERROR) << "recv data data error";
+						ZXEngine::writeLog("recv data data error");
 						return;
 					}
 
 					Json::Value jUsers;
 					if (!rtc::GetValueFromJsonObject(jData, "users", &jUsers))
 					{
-						RTC_LOG(LS_ERROR) << "recv data users error";
+						ZXEngine::writeLog("recv data users error");
 						return;
 					}
 
 					Json::Value jPubs;
 					if (!rtc::GetValueFromJsonObject(jData, "pubs", &jPubs))
 					{
-						RTC_LOG(LS_ERROR) << "recv data pubs error";
+						ZXEngine::writeLog("recv data pubs error");
 						return;
 					}
 
 					std::vector<Json::Value> jUser;
 					if (!rtc::JsonArrayToValueVector(jUsers, &jUser))
 					{
-						RTC_LOG(LS_ERROR) << "recv data users error";
+						ZXEngine::writeLog("recv data users error");
 						return;
 					}
 
@@ -137,7 +139,7 @@ void ZXClient::OnDataRecv(const std::string message)
 					std::vector<Json::Value> jPub;
 					if (!rtc::JsonArrayToValueVector(jPubs, &jPub))
 					{
-						RTC_LOG(LS_ERROR) << "recv data pubs error";
+						ZXEngine::writeLog("recv data pubs error");
 						return;
 					}
 
@@ -146,30 +148,26 @@ void ZXClient::OnDataRecv(const std::string message)
 						pZXEngine->respStreamAdd(jPub[i]);
 					}
 				}
-				if (nType == 10002)
-				{
-					bRespResult = true;
-				}
 				if (nType == 10010)
 				{
 					Json::Value jData;
 					if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 					{
-						RTC_LOG(LS_ERROR) << "recv data data error";
+						ZXEngine::writeLog("recv data data error");
 						return;
 					}
 
 					Json::Value jJsep;
 					if (!rtc::GetValueFromJsonObject(jData, "jsep", &jJsep))
 					{
-						RTC_LOG(LS_ERROR) << "recv data jsep error";
+						ZXEngine::writeLog("recv data jsep error");
 						return;
 					}
 
 					std::string sdp;
 					if (!rtc::GetStringFromJsonObject(jJsep, "sdp", &sdp))
 					{
-						RTC_LOG(LS_ERROR) << "recv data sdp error";
+						ZXEngine::writeLog("recv data sdp error");
 						return;
 					}
 					strSdp = sdp;
@@ -177,7 +175,7 @@ void ZXClient::OnDataRecv(const std::string message)
 					std::string mid;
 					if (!rtc::GetStringFromJsonObject(jData, "mid", &mid))
 					{
-						RTC_LOG(LS_ERROR) << "recv data mid error";
+						ZXEngine::writeLog("recv data mid error");
 						return;
 					}
 					strMid = mid;
@@ -185,7 +183,7 @@ void ZXClient::OnDataRecv(const std::string message)
 					std::string sfu;
 					if (!rtc::GetStringFromJsonObject(jData, "sfuid", &sfu))
 					{
-						RTC_LOG(LS_ERROR) << "recv data sfu error";
+						ZXEngine::writeLog("recv data sfu error");
 						return;
 					}
 					strSfu = sfu;
@@ -197,21 +195,21 @@ void ZXClient::OnDataRecv(const std::string message)
 					Json::Value jData;
 					if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 					{
-						RTC_LOG(LS_ERROR) << "recv data data error";
+						ZXEngine::writeLog("recv data data error");
 						return;
 					}
 
 					Json::Value jJsep;
 					if (!rtc::GetValueFromJsonObject(jData, "jsep", &jJsep))
 					{
-						RTC_LOG(LS_ERROR) << "recv data jsep error";
+						ZXEngine::writeLog("recv data jsep error");
 						return;
 					}
 
 					std::string sdp;
 					if (!rtc::GetStringFromJsonObject(jJsep, "sdp", &sdp))
 					{
-						RTC_LOG(LS_ERROR) << "recv data sdp error";
+						ZXEngine::writeLog("recv data sdp error");
 						return;
 					}
 					strSdp = sdp;
@@ -219,7 +217,7 @@ void ZXClient::OnDataRecv(const std::string message)
 					std::string sid;
 					if (!rtc::GetStringFromJsonObject(jData, "sid", &sid))
 					{
-						RTC_LOG(LS_ERROR) << "recv data mid error";
+						ZXEngine::writeLog("recv data sid error");
 						return;
 					}
 					strSid = sid;
@@ -238,7 +236,7 @@ void ZXClient::OnDataRecv(const std::string message)
 		bool bNotification = false;
 		if (!rtc::GetBoolFromJsonObject(jRoot, "notification", &bNotification))
 		{
-			RTC_LOG(LS_ERROR) << "recv data notification error";
+			ZXEngine::writeLog("recv data notification error");
 			return;
 		}
 
@@ -247,7 +245,7 @@ void ZXClient::OnDataRecv(const std::string message)
 			std::string method;
 			if (!rtc::GetStringFromJsonObject(jRoot, "method", &method))
 			{
-				RTC_LOG(LS_ERROR) << "recv data method error";
+				ZXEngine::writeLog("recv data method error");
 				return;
 			}
 			if (method == "peer-join")
@@ -255,7 +253,7 @@ void ZXClient::OnDataRecv(const std::string message)
 				Json::Value jData;
 				if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 				{
-					RTC_LOG(LS_ERROR) << "recv data data error";
+					ZXEngine::writeLog("recv data data error");
 					return;
 				}
 
@@ -266,7 +264,7 @@ void ZXClient::OnDataRecv(const std::string message)
 				Json::Value jData;
 				if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 				{
-					RTC_LOG(LS_ERROR) << "recv data data error";
+					ZXEngine::writeLog("recv data data error");
 					return;
 				}
 
@@ -277,7 +275,7 @@ void ZXClient::OnDataRecv(const std::string message)
 				Json::Value jData;
 				if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 				{
-					RTC_LOG(LS_ERROR) << "recv data data error";
+					ZXEngine::writeLog("recv data data error");
 					return;
 				}
 
@@ -288,7 +286,7 @@ void ZXClient::OnDataRecv(const std::string message)
 				Json::Value jData;
 				if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 				{
-					RTC_LOG(LS_ERROR) << "recv data data error";
+					ZXEngine::writeLog("recv data data error");
 					return;
 				}
 
@@ -299,7 +297,7 @@ void ZXClient::OnDataRecv(const std::string message)
 				Json::Value jData;
 				if (!rtc::GetValueFromJsonObject(jRoot, "data", &jData))
 				{
-					RTC_LOG(LS_ERROR) << "recv data data error";
+					ZXEngine::writeLog("recv data data error");
 					return;
 				}
 
@@ -313,7 +311,8 @@ bool ZXClient::Start(std::string url)
 {
 	Stop();
 
-	RTC_LOG(LS_ERROR) << "websocket url = " << url;
+	std::string msg = "websocket url = " + url;
+	ZXEngine::writeLog(msg);
 
 	close_ = false;
 	connect_ = false;
@@ -321,7 +320,7 @@ bool ZXClient::Start(std::string url)
 	bool suc = websocket_.open(url);
 	if (suc)
 	{
-		int nCount = 50;
+		int nCount = 150;
 		while (nCount > 0)
 		{
 			if (close_)
@@ -344,6 +343,11 @@ bool ZXClient::Start(std::string url)
 
 void ZXClient::Stop()
 {
+	if (close_)
+	{
+		return;
+	}
+
 	close_ = true;
 	connect_ = false;
 
@@ -387,14 +391,15 @@ bool ZXClient::SendJoin()
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send join = " << jsonStr;
+		std::string msg = "websocket send join = " + jsonStr;
+		ZXEngine::writeLog(msg);
 
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10000;
 		if (websocket_.send(jsonStr))
 		{
-			int nCount = 30;
+			int nCount = 150;
 			while (nCount > 0)
 			{
 				if (nRespOK == 0)
@@ -453,7 +458,9 @@ void ZXClient::SendLeave()
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send leave = " << jsonStr;
+		std::string msg = "websocket send leave = " + jsonStr;
+		ZXEngine::writeLog(msg);
+
 		websocket_.send(jsonStr);
 	}
 	mutex_.unlock();
@@ -471,7 +478,7 @@ bool ZXClient::SendAlive()
 	}
 
 	int nCount = random(1000000, 9000000);
-	nIndex = nCount;
+	//nIndex = nCount;
 
 	Json::Value jsonData;
 	jsonData["rid"] = pZXEngine->strRid;
@@ -489,8 +496,11 @@ bool ZXClient::SendAlive()
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send alive = " << jsonStr;
+		std::string msg = "websocket send alive = " + jsonStr;
+		ZXEngine::writeLog(msg);
 
+		websocket_.send(jsonStr);
+		/*
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10002;
@@ -520,7 +530,7 @@ bool ZXClient::SendAlive()
 				Sleep(100);
 				nCount--;
 			}
-		}
+		}*/
 	}
 	mutex_.unlock();
 	return false;
@@ -567,14 +577,15 @@ bool ZXClient::SendPublish(std::string sdp, bool bAudio, bool bVideo, int videoT
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send publish = " << jsonStr;
+		std::string msg = "websocket send publish = " + jsonStr;
+		ZXEngine::writeLog(msg);
 
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10010;
 		if (websocket_.send(jsonStr))
 		{
-			int nCount = 30;
+			int nCount = 150;
 			while (nCount > 0)
 			{
 				if (nRespOK == 0)
@@ -638,7 +649,9 @@ void ZXClient::SendUnPublish(std::string mid, std::string sfuid)
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send unpublish = " << jsonStr;
+		std::string msg = "websocket send unpublish = " + jsonStr;
+		ZXEngine::writeLog(msg);
+
 		websocket_.send(jsonStr);
 	}
 	mutex_.unlock();
@@ -684,14 +697,15 @@ bool ZXClient::SendSubscribe(std::string sdp, std::string mid, std::string sfuid
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send subscribe = " << jsonStr;
-
+		std::string msg = "websocket send subscribe = " + jsonStr;
+		ZXEngine::writeLog(msg);
+	
 		nRespOK = -1;
 		bRespResult = false;
 		nType = 10015;
 		if (websocket_.send(jsonStr))
 		{
-			int nCount = 30;
+			int nCount = 150;
 			while (nCount > 0)
 			{
 				if (nRespOK == 0)
@@ -756,7 +770,9 @@ void ZXClient::SendUnSubscribe(std::string mid, std::string sid, std::string sfu
 	mutex_.lock();
 	if (GetConnect())
 	{
-		RTC_LOG(LS_ERROR) << "websocket send unsubscribe = " << jsonStr;
+		std::string msg = "websocket send unsubscribe = " + jsonStr;
+		ZXEngine::writeLog(msg);
+
 		websocket_.send(jsonStr);
 	}
 	mutex_.unlock();

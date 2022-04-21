@@ -14,6 +14,9 @@ public:
 	ZXEngine();
 	virtual ~ZXEngine();
 
+	// 设置日志输出
+	void setLogDebug(log_callback callback);
+
 	// 设置服务器地址
 	void setServerIp(std::string ip, uint16_t port);
 
@@ -81,6 +84,9 @@ public:
 	// json (rid, uid)
 	void respPeerKick(Json::Value jsonObject);
 
+	// 写日志
+	static void writeLog(std::string msg);
+
 private:
 	// MessageHandler implementation
 	void OnMessage(rtc::Message* msg) override;
@@ -89,16 +95,10 @@ private:
 	bool initPeerConnectionFactory();
 	void freePeerConnectionFactory();
 
-	// 启动推流
-	void startPublish();
 	// 停止推流
 	void stopPublish();
-
-	// 启动屏幕推流
-	void startScreen();
 	// 停止屏幕推流
 	void stopScreen();
-
 	// 启动拉流
 	void startSubscribe(std::string uid, std::string mid, std::string sfu);
 	// 停止拉流
@@ -129,8 +129,6 @@ public:
 
 	// 连接状态
 	int mStatus;
-	// 心跳状态
-	bool bHeatOk;
 	// 线程对象
 	bool bWorkExit;
 	bool bHeatExit;

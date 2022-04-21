@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "WebSocket.h"
+#include "ZXEngine.h"
 #include <thread>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
-#include "rtc_base/logging.h"
 
 WebSocketClient::WebSocketClient()
 {
@@ -46,14 +46,15 @@ bool WebSocketClient::open(const std::string uri)
 	client::connection_ptr con = m_endpoint->get_connection(uri, ec);
 	if (ec)
 	{
-		RTC_LOG(LS_ERROR) << "could not create connection because:" << ec.message();
+		std::string msg = "could not create connection because:" + ec.message();
+		ZXEngine::writeLog(msg);
 		return false;
 	}
 
 	m_hdl = con->get_handle();
 	m_endpoint->connect(con);
 
-	std::thread thread(WebSocketClient::open_thread_, this);
+	std::thread thread(WebSocketClient::work_thread, this);
 	thread.detach();
 	return true;
 }
@@ -66,7 +67,7 @@ bool WebSocketClient::send(const std::string& msg)
 	}
 	if (m_hdl.expired())
 	{
-		RTC_LOG(LS_ERROR) << "client ws expired";
+		ZXEngine::writeLog("client ws expired");
 		return false;
 	}
 	if (m_endpoint.get() != nullptr)
@@ -87,22 +88,27 @@ void WebSocketClient::close()
 			m_endpoint->close(m_hdl, websocketpp::close::status::normal, "", ec);
 			if (ec)
 			{
-				RTC_LOG(LS_ERROR) << "ws close error = " << ec.message();
+				std::string msg = "ws close error = " + ec.message();
+				ZXEngine::writeLog(msg);
 			}
 		}
 		catch (websocketpp::exception &e)
 		{
-			RTC_LOG(LS_ERROR) << e.what();
+			std::string msg = "websocket close error = ";
+			msg = msg + e.what();
+			ZXEngine::writeLog(msg);
 		}
 		catch (std::exception &e)
 		{
-			RTC_LOG(LS_ERROR) << e.what();
+			std::string msg = "websocket close error = ";
+			msg = msg + e.what();
+			ZXEngine::writeLog(msg);
 		}
 		m_endpoint.reset();
 	}
 }
 
-void WebSocketClient::open_thread_(WebSocketClient *pWebsocket)
+void WebSocketClient::work_thread(WebSocketClient *pWebsocket)
 {
 	try
 	{
@@ -110,17 +116,22 @@ void WebSocketClient::open_thread_(WebSocketClient *pWebsocket)
 	}
 	catch (websocketpp::exception &e)
 	{
-		RTC_LOG(LS_ERROR) << e.what();
+		std::string msg = "websocket thread error = ";
+		msg = msg + e.what();
+		ZXEngine::writeLog(msg);
 	}
 	catch (std::exception &e)
 	{
-		RTC_LOG(LS_ERROR) << e.what();
+		std::string msg = "websocket thread error = ";
+		msg = msg + e.what();
+		ZXEngine::writeLog(msg);
 	}
 }
 
 void WebSocketClient::onSocketInit(websocketpp::connection_hdl hdl)
 {
-	RTC_LOG(LS_ERROR) << "client socket init";
+	std::string msg = "websocket socket init";
+	ZXEngine::writeLog(msg);
 }
 
 void WebSocketClient::onMessage(websocketpp::connection_hdl hdl, message_ptr msg)
@@ -133,7 +144,9 @@ void WebSocketClient::onMessage(websocketpp::connection_hdl hdl, message_ptr msg
 
 void WebSocketClient::onOpen(websocketpp::connection_hdl hdl)
 {
-	RTC_LOG(LS_ERROR) << "client socket open";
+	std::string msg = "websocket socket open";
+	ZXEngine::writeLog(msg);
+
 	if (m_call != nullptr)
 	{
 		m_call->onOpen("");
@@ -142,7 +155,9 @@ void WebSocketClient::onOpen(websocketpp::connection_hdl hdl)
 
 void WebSocketClient::onClose(websocketpp::connection_hdl hdl)
 {
-	RTC_LOG(LS_ERROR) << "client socket close";
+	std::string msg = "websocket socket close";
+	ZXEngine::writeLog(msg);
+
 	if (m_call != nullptr)
 	{
 		m_call->onClose(getError(hdl));
@@ -151,7 +166,9 @@ void WebSocketClient::onClose(websocketpp::connection_hdl hdl)
 
 void WebSocketClient::onFail(websocketpp::connection_hdl hdl)
 {
-	RTC_LOG(LS_ERROR) << "client socket fail";
+	std::string msg = "websocket socket fail";
+	ZXEngine::writeLog(msg);
+
 	if (m_call != nullptr)
 	{
 		m_call->onFail(getError(hdl));

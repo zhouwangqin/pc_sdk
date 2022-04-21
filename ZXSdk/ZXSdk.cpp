@@ -9,6 +9,11 @@
 // 全局对象
 ZXEngine mZXEngine;
 
+WEBRTC_API void setLogDebug(log_callback callback)
+{
+	mZXEngine.setLogDebug(callback);
+}
+
 WEBRTC_API void setServerIp(char *ip, unsigned short port)
 {
 	mZXEngine.setServerIp(ip, port);
@@ -71,9 +76,9 @@ WEBRTC_API void setFrameRate(int nFrameRate)
 	{
 		nFrame = 5;
 	}
-	if (nFrame > 30)
+	if (nFrame > 15)
 	{
-		nFrame = 30;
+		nFrame = 15;
 	}
 	mZXEngine.setFrameRate(nFrame);
 }

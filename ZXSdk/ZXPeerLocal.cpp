@@ -82,7 +82,7 @@ void ZXPeerLocal::CreateOffer()
 
 void ZXPeerLocal::CreateSdpSuc(webrtc::SessionDescriptionInterface* sdp)
 {
-	RTC_LOG(LS_ERROR) << "local peer create offer sdp ok";
+	ZXEngine::writeLog("local peer create offer sdp ok");
 	if (bClose)
 	{
 		return;
@@ -94,7 +94,9 @@ void ZXPeerLocal::CreateSdpSuc(webrtc::SessionDescriptionInterface* sdp)
 
 void ZXPeerLocal::CreateSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "local peer create offer sdp fail = " << error;
+	std::string msg = "local peer create offer sdp fail = " + error;
+	ZXEngine::writeLog(msg);
+
 	nLive = 0;
 }
 
@@ -108,11 +110,12 @@ void ZXPeerLocal::SetLocalDescription(webrtc::SessionDescriptionInterface* sdp)
 
 void ZXPeerLocal::OnSetLocalSdpSuc()
 {
-	RTC_LOG(LS_ERROR) << "local peer set offer sdp ok";
+	ZXEngine::writeLog("local peer set offer sdp ok");
 	if (bClose) 
 	{
 		return;
 	}
+
 	if (pZXEngine != nullptr && pZXEngine->g_ws_thread_.get() != nullptr)
 	{
 		rtc::Location loc(__FUNCTION__, __FILE__);
@@ -122,7 +125,9 @@ void ZXPeerLocal::OnSetLocalSdpSuc()
 
 void ZXPeerLocal::OnSetLoaclSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "local peer set offer sdp fail = " << error;
+	std::string msg = "local peer set offer sdp fail = " + error;
+	ZXEngine::writeLog(msg);
+
 	nLive = 0;
 }
 
@@ -136,13 +141,20 @@ void ZXPeerLocal::SetRemoteDescription(webrtc::SessionDescriptionInterface* sdp)
 
 void ZXPeerLocal::OnSetRemoteSdpSuc()
 {
-	RTC_LOG(LS_ERROR) << "local peer set answer sdp ok";
+	ZXEngine::writeLog("local peer set answer sdp ok");
+	if (bClose)
+	{
+		return;
+	}
+
 	nLive = 3;
 }
 
 void ZXPeerLocal::OnSetRemoteSdpFail(std::string error)
 {
-	RTC_LOG(LS_ERROR) << "local peer set answer sdp fail = " << error;
+	std::string msg = "local peer set answer sdp fail = " + error;
+	ZXEngine::writeLog(msg);
+
 	nLive = 0;
 }
 
@@ -175,7 +187,7 @@ bool ZXPeerLocal::InitPeerConnection()
 	// ´´½¨peer
 	if (pZXEngine != nullptr && pZXEngine->peer_connection_factory_ != nullptr)
 	{
-		RTC_LOG(LS_ERROR) << "local peer create start";
+		ZXEngine::writeLog("local peer create start");
 		peer_connection_ = pZXEngine->peer_connection_factory_->CreatePeerConnection(config, NULL, NULL, this);
 		if (peer_connection_ != nullptr)
 		{
@@ -193,30 +205,32 @@ bool ZXPeerLocal::InitPeerConnection()
 
 			nLive = 1;
 			bClose = false;
-			RTC_LOG(LS_ERROR) << "local peer create stop";
+			ZXEngine::writeLog("local peer create stop");
 			return true;
 		}
-		RTC_LOG(LS_ERROR) << "local peer create stop";
+		ZXEngine::writeLog("local peer create stop1");
 	}
 	return false;
 }
 
 void ZXPeerLocal::FreePeerConnection()
 {
-	if (!bClose)
+	if (bClose)
 	{
-		nLive = 0;
-		bClose = true;
-		sdp_ = "";
-		audio_track_ = nullptr;
-		RTC_LOG(LS_ERROR) << "local peer free start";
-		if (peer_connection_ != nullptr)
-		{
-			peer_connection_->Close();
-			peer_connection_ = nullptr;
-		}
-		RTC_LOG(LS_ERROR) << "local peer free stop";
+		return;
 	}
+
+	nLive = 0;
+	bClose = true;
+	sdp_ = "";
+	audio_track_ = nullptr;
+	ZXEngine::writeLog("local peer free start");
+	if (peer_connection_ != nullptr)
+	{
+		peer_connection_->Close();
+		peer_connection_ = nullptr;
+	}
+	ZXEngine::writeLog("local peer free stop");
 }
 
 void ZXPeerLocal::SendPublish(std::string sdp)
@@ -269,17 +283,17 @@ void ZXPeerLocal::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnec
 {
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kConnected)
 	{
-		RTC_LOG(LS_ERROR) << "local peer kConnected";
+		ZXEngine::writeLog("local peer kConnected");
 		nLive = 4;
 	}
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kDisconnected)
 	{
-		RTC_LOG(LS_ERROR) << "local peer kDisconnected";
+		ZXEngine::writeLog("local peer kDisconnected");
 		nLive = 0;
 	}
 	if (new_state == webrtc::PeerConnectionInterface::PeerConnectionState::kFailed)
 	{
-		RTC_LOG(LS_ERROR) << "local peer kFailed";
+		ZXEngine::writeLog("local peer kFailed");
 		nLive = 0;
 	}
 }

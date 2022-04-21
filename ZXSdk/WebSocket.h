@@ -34,7 +34,7 @@ public:
 	virtual void onFail(websocketpp::connection_hdl hdl);
 
 protected:
-	static void open_thread_(WebSocketClient *pWebsocket);
+	static void work_thread(WebSocketClient *pWebsocket);
 	std::string getError(websocketpp::connection_hdl hdl);
 	
 protected:
