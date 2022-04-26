@@ -1,21 +1,21 @@
 #pragma once
 #include "ZXVideo.h"
+#include "ZXScreen.h"
 #include "ZXSdpListen.h"
 #include "api/peerconnectioninterface.h"
 
 class ZXEngine;
-class ZXPeerRemote : public webrtc::PeerConnectionObserver,
-	public webrtc::AudioTrackSinkInterface,
-	public rtc::MessageHandler
+class ZXPeerScreen : public webrtc::PeerConnectionObserver,
+					 public rtc::MessageHandler
 {
 public:
-	ZXPeerRemote();
-	virtual ~ZXPeerRemote();
+	ZXPeerScreen();
+	virtual ~ZXPeerScreen();
 
-	// 启动拉流
-	void StartSubscribe();
-	// 取消拉流
-	void StopSubscribe();
+	// 启动推流
+	void StartPublish();
+	// 取消推流
+	void StopPublish();
 
 	// 创建Offer
 	void CreateOffer();
@@ -38,21 +38,23 @@ public:
 	// 设置远端sdp失败
 	void OnSetRemoteSdpFail(std::string error);
 
-	// 发送订阅
-	void SendSubscribe(std::string sdp);
-	// 发送取消订阅
-	void SendUnSubscribe();
+	// 发送推流
+	void SendPublish(std::string sdp);
+	// 发送取消推流
+	void SendUnPublish();
 
 private:
 	// PeerConnection对象
 	bool InitPeerConnection();
 	void FreePeerConnection();
 
+	// 设置发送端码率
+	void SetBitrate();
+
 	//
-	// PeerConnectionObserver implementation.
+	// PeerConnectionObserver implementation
 	//
 	void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override {}
-	void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 	void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
 	void OnRenegotiationNeeded() override {}
 	void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override {}
@@ -63,15 +65,11 @@ private:
 	// MessageHandler implementation
 	void OnMessage(rtc::Message* msg) override;
 
-	// AudioTrackSinkInterface implementation
-	void OnData(const void* audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames) override;
-
 public:
 	// 参数
 	std::string strUid;
 	std::string strMid;
 	std::string strSfu;
-	std::string strSid;
 
 	// 连接状态
 	int nLive;
@@ -80,12 +78,23 @@ public:
 	// 上层对象
 	ZXEngine* pZXEngine;
 	// 视频回调对象
-	ZXVideoObserver remote_video_observer_;
+	ZXVideoObserver local_video_observer_;
+
+	// 采集帧率
+	int nCapFrameRate;
+	// 最低码率kbps
+	int nMinBitRate;
+	// 最高码率kbps
+	int nMaxBitRate;
+	// 初始码率kbps
+	int nStartBitRate;
 
 private:
 	// offer sdp
 	std::string sdp_;
 	// rtc 对象
+	rtc::scoped_refptr<ZXScreen> video_device_;
+	rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
 	rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
 
 	// sdp 回调

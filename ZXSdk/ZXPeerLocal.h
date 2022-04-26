@@ -4,7 +4,8 @@
 
 class ZXEngine;
 class ZXPeerLocal : public webrtc::PeerConnectionObserver,
-					public rtc::MessageHandler
+	public webrtc::AudioTrackSinkInterface,
+	public rtc::MessageHandler
 {
 public:
 	ZXPeerLocal();
@@ -63,6 +64,9 @@ private:
 
 	// MessageHandler implementation
 	void OnMessage(rtc::Message* msg) override;
+
+	// AudioTrackSinkInterface implementation
+	void OnData(const void* audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames) override;
 
 public:
 	// ²ÎÊý

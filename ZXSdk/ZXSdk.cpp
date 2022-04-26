@@ -39,16 +39,6 @@ WEBRTC_API void freeSdk()
 	mZXEngine.freeSdk();
 }
 
-WEBRTC_API bool start()
-{
-	return mZXEngine.start();
-}
-
-WEBRTC_API void stop()
-{
-	mZXEngine.stop();
-}
-
 WEBRTC_API bool joinRoom(char *rid)
 {
 	return mZXEngine.joinRoom(rid);
@@ -67,6 +57,11 @@ WEBRTC_API void setPublish(bool bPub)
 WEBRTC_API void setScreen(bool bPub)
 {
 	mZXEngine.setScreen(bPub);
+}
+
+WEBRTC_API void setScreenPub(bool bPub)
+{
+	mZXEngine.setScreenPub(bPub);
 }
 
 WEBRTC_API void setFrameRate(int nFrameRate)

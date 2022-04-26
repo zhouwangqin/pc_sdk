@@ -466,20 +466,19 @@ void ZXClient::SendLeave()
 	mutex_.unlock();
 }
 
-bool ZXClient::SendAlive()
+void ZXClient::SendAlive()
 {
 	if (pZXEngine == nullptr)
 	{
-		return false;
+		return;
 	}
 	if (pZXEngine->strRid == "")
 	{
-		return false;
+		return;
 	}
 
 	int nCount = random(1000000, 9000000);
-	//nIndex = nCount;
-
+	
 	Json::Value jsonData;
 	jsonData["rid"] = pZXEngine->strRid;
 
@@ -500,40 +499,8 @@ bool ZXClient::SendAlive()
 		ZXEngine::writeLog(msg);
 
 		websocket_.send(jsonStr);
-		/*
-		nRespOK = -1;
-		bRespResult = false;
-		nType = 10002;
-		if (websocket_.send(jsonStr))
-		{
-			int nCount = 30;
-			while (nCount > 0)
-			{
-				if (nRespOK == 0)
-				{
-					mutex_.unlock();
-					return false;
-				}
-				if (nRespOK == 1)
-				{
-					if (bRespResult)
-					{
-						mutex_.unlock();
-						return true;
-					}
-				}
-				if (close_)
-				{
-					mutex_.unlock();
-					return false;
-				}
-				Sleep(100);
-				nCount--;
-			}
-		}*/
 	}
 	mutex_.unlock();
-	return false;
 }
 
 bool ZXClient::SendPublish(std::string sdp, bool bAudio, bool bVideo, int videoType)

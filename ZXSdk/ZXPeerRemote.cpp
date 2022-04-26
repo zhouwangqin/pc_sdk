@@ -16,7 +16,7 @@ ZXPeerRemote::ZXPeerRemote()
 
 	sdp_ = "";
 	peer_connection_ = nullptr;
-	remote_video_observer_.reset(new ZXVideoObserver());
+	remote_video_observer_.pZXPeerRemote = this;
 
 	pOfferCreateSdpObserver = OfferCreateSessionDescriptionObserver::Create();
 	pOfferCreateSdpObserver->pZXPeerRemote = this;
@@ -31,7 +31,6 @@ ZXPeerRemote::~ZXPeerRemote()
 	pOfferCreateSdpObserver = nullptr;
 	pOfferSetSdpObserver = nullptr;
 	pAnswerSetSdpObserver = nullptr;
-	remote_video_observer_.reset();
 }
 
 void ZXPeerRemote::OnMessage(rtc::Message * msg)
@@ -40,6 +39,11 @@ void ZXPeerRemote::OnMessage(rtc::Message * msg)
 	{
 		SendSubscribe(sdp_);
 	}
+}
+
+void ZXPeerRemote::OnData(const void * audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames)
+{
+	//ZXEngine::writeLog("remote peer audio callback = ");
 }
 
 void ZXPeerRemote::StartSubscribe()
@@ -183,10 +187,6 @@ bool ZXPeerRemote::InitPeerConnection()
 		{
 			peer_connection_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_AUDIO);
 			peer_connection_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO);
-			if (remote_video_observer_.get() != nullptr)
-			{
-				remote_video_observer_->SetVideoCallback(pZXEngine->remote_callback_, (char*)(strUid.c_str()), 1);
-			}
 
 			nLive = 1;
 			bClose = false;
@@ -268,9 +268,13 @@ void ZXPeerRemote::SendUnSubscribe()
 
 void ZXPeerRemote::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-	if (remote_video_observer_.get() != nullptr && !stream->GetVideoTracks().empty())
+	if (!stream->GetVideoTracks().empty())
 	{
-		stream->GetVideoTracks()[0]->AddOrUpdateSink(remote_video_observer_.get(), rtc::VideoSinkWants());
+		stream->GetVideoTracks()[0]->AddOrUpdateSink(&remote_video_observer_, rtc::VideoSinkWants());
+	}
+	if (!stream->GetAudioTracks().empty())
+	{
+		stream->GetAudioTracks()[0]->AddSink(this);
 	}
 }
 

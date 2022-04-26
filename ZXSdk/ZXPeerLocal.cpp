@@ -40,6 +40,11 @@ void ZXPeerLocal::OnMessage(rtc::Message * msg)
 	}
 }
 
+void ZXPeerLocal::OnData(const void * audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames)
+{
+	ZXEngine::writeLog("local peer audio callback");
+}
+
 void ZXPeerLocal::StartPublish()
 {
 	InitPeerConnection();
@@ -200,6 +205,7 @@ bool ZXPeerLocal::InitPeerConnection()
 				if (audio_track_ != nullptr)
 				{
 					peer_connection_->AddTrack(audio_track_, { kStreamId });
+					audio_track_->AddSink(this);
 				}
 			}
 

@@ -5,7 +5,7 @@
 // add by zhouwq
 #define WEBRTC_EXPORTS
 #include <Windows.h>
-#pragma warning(disable:4995)
+#pragma warning(disable:4267)
 #pragma comment(lib, "advapi32.lib")
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "dbghelp.lib")

@@ -32,12 +32,6 @@ public:
 	// 释放sdk
 	void freeSdk();
 
-	// 启动连接
-	bool start();
-
-	// 停止连接
-	void stop();
-
 	// 加入房间
 	bool joinRoom(std::string rid);
 
@@ -49,6 +43,7 @@ public:
 
 	// 设置是否屏幕共享
 	void setScreen(bool bPub);
+	void setScreenPub(bool bPub);
 	void setFrameRate(int nFrameRate);
 
 	// 设置麦克风
@@ -123,12 +118,13 @@ public:
 	// 推流标记
 	bool bPublish;
 	bool bScreen;
-	// 关闭标记
-	bool bRoomClose;
-	bool bSocketClose;
+	bool bScreenPub;
 
 	// 连接状态
 	int mStatus;
+	// 关闭标记
+	bool bRoomClose;
+
 	// 线程对象
 	bool bWorkExit;
 	bool bHeatExit;

@@ -15,10 +15,11 @@ ZXEngine::ZXEngine()
 
 	bPublish = true;
 	bScreen = false;
-	bRoomClose = false;
-	bSocketClose = false;
+	bScreenPub = true;
 
 	mStatus = 0;
+	bRoomClose = false;
+
 	bWorkExit = false;
 	bHeatExit = false;
 	hWorkThread = nullptr;
@@ -81,68 +82,25 @@ bool ZXEngine::initSdk(std::string uid)
 		return false;
 	}
 
-	if (peer_connection_factory_ != nullptr)
-	{
-		return true;
-	}
-
 	strUid = uid;
 	mLocalPeer.strUid = uid;
 	mScreenPeer.strUid = uid;
+	writeLog("start initSdk");
 	return initPeerConnectionFactory();
 }
 
 // 释放sdk
 void ZXEngine::freeSdk()
 {
-	if (strUid == "" || peer_connection_factory_ == nullptr)
+	if (strUid == "")
 	{
 		return;
 	}
 
+	writeLog("start freeSdk");
 	freePeerConnectionFactory();
 	strUid = "";
-}
-
-// 启动连接
-bool ZXEngine::start()
-{
-	if (strUid == "" || peer_connection_factory_ == nullptr)
-	{
-		return false;
-	}
-
-	char cport[16];
-	memset(cport, 0, sizeof(char) * 16);
-	_itoa(g_server_port, cport, 10);
-	std::string port_ = cport;
-	strUrl = "ws://" + g_server_ip + ":" + port_ + "/ws?peer=" + strUid;
-
-	bSocketClose = false;
-	writeLog("------start------1");
-	bool bSuc = mZXClient.Start(strUrl);
-	if (bSuc)
-	{
-		writeLog("------start------2");
-		mStatus = 1;
-	}
-	writeLog("------start------3");
-	return bSuc;
-}
-
-// 停止连接
-void ZXEngine::stop()
-{
-	if (bSocketClose)
-	{
-		return;
-	}
-
-	mStatus = 0;
-	bSocketClose = true;
-	writeLog("------stop------1");
-	mZXClient.Stop();
-	writeLog("------stop------2");
+	writeLog("start freeSdk ok");
 }
 
 // 加入房间
@@ -159,18 +117,40 @@ bool ZXEngine::joinRoom(std::string rid)
 	}
 
 	strRid = rid;
+	char cport[16];
+	memset(cport, 0, sizeof(char) * 16);
+	_itoa(g_server_port, cport, 10);
+	std::string port_ = cport;
+	strUrl = "ws://" + g_server_ip + ":" + port_ + "/ws?peer=" + strUid;
+
 	bRoomClose = false;
-	writeLog("------joinRoom------1");
-	if (mZXClient.SendJoin())
+	writeLog("start socket");
+	if (mZXClient.Start(strUrl))
 	{
-		writeLog("------joinRoom------2");
-		mStatus = 2;
-		// 启动线程
-		StartWorkThread();
-		StartHeatThread();
-		return true;
+		writeLog("start socket ok");
+		writeLog("start join room");
+		if (mZXClient.SendJoin())
+		{
+			writeLog("start join room ok");
+			mStatus = 1;
+			// 启动线程
+			StartWorkThread();
+			StartHeatThread();
+			return true;
+		}
+		else
+		{
+			writeLog("start join room fail");
+			mStatus = 0;
+			mZXClient.Stop();
+		}
 	}
-	writeLog("------joinRoom------3");
+	else
+	{
+		writeLog("start socket fail");
+		mStatus = 0;
+		mZXClient.Stop();
+	}
 	return false;
 }
 
@@ -187,20 +167,21 @@ void ZXEngine::leaveRoom()
 		return;
 	}
 
-	writeLog("------leaveRoom------1");
-	mStatus = 1;
+	mStatus = 0;
 	bRoomClose = true;
+	writeLog("stop thread");
 	StopHeatThread();
 	StopWorkThread();
-	writeLog("------leaveRoom------2");
-	stopScreen();
-	writeLog("------leaveRoom------3");
-	stopPublish();
-	writeLog("------leaveRoom------4");
+	writeLog("stop all remote peer");
 	freeAllRemotePeer();
-	writeLog("------leaveRoom------5");
+	writeLog("stop screen peer");
+	stopScreen();
+	writeLog("stop audio peer");
+	stopPublish();
+	writeLog("leave room");
 	mZXClient.SendLeave();
-	writeLog("------leaveRoom------6");
+	writeLog("close socket");
+	mZXClient.Stop();
 	strRid = "";
 }
 
@@ -212,6 +193,16 @@ void ZXEngine::setPublish(bool bPub)
 void ZXEngine::setScreen(bool bPub)
 {
 	bScreen = bPub;
+}
+
+void ZXEngine::setScreenPub(bool bPub)
+{
+	if (bScreenPub == bPub)
+	{
+		return;
+	}
+	bScreenPub = bPub;
+	mScreenPeer.StopPublish();
 }
 
 void ZXEngine::setFrameRate(int nFrameRate)
@@ -252,7 +243,7 @@ void ZXEngine::respPeerLeave(Json::Value jsonObject)
 
 void ZXEngine::respStreamAdd(Json::Value jsonObject)
 {
-	if (bSocketClose || bRoomClose)
+	if (bRoomClose)
 	{
 		return;
 	}
@@ -494,19 +485,20 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 	ZXEngine *pZXEngine = (ZXEngine*)data;
 	while (!pZXEngine->bWorkExit)
 	{
-		if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+		if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 		{
 			writeLog("WorkThreadFunc stop1");
 			return 0;
 		}
 
-		if (pZXEngine->mStatus == 2)
+		if (pZXEngine->mStatus == 1)
 		{
 			// 判断推流
 			if (pZXEngine->bPublish)
 			{
 				if (pZXEngine->mLocalPeer.nLive == 0)
 				{
+					writeLog("start audio pub");
 					pZXEngine->mLocalPeer.StartPublish();
 				}
 			}
@@ -515,7 +507,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 				pZXEngine->mLocalPeer.StopPublish();
 			}
 			
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 			{
 				writeLog("WorkThreadFunc stop2");
 				return 0;
@@ -526,6 +518,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 			{
 				if (pZXEngine->mScreenPeer.nLive == 0)
 				{
+					writeLog("start screen pub");
 					pZXEngine->mScreenPeer.StartPublish();
 				}
 			}
@@ -534,7 +527,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 				pZXEngine->mScreenPeer.StopPublish();
 			}
 
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 			{
 				writeLog("WorkThreadFunc stop3");
 				return 0;
@@ -550,11 +543,12 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 				{
 					if (pRemote->nLive == 0)
 					{
+						writeLog("start remote sub = " + pRemote->strMid);
 						pRemote->StartSubscribe();
 					}
 				}
 				
-				if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+				if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 				{
 					pZXEngine->mutex.unlock();
 					writeLog("WorkThreadFunc stop4");
@@ -568,7 +562,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 			// 停止推流
 			pZXEngine->stopPublish();
 
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 			{
 				writeLog("WorkThreadFunc stop5");
 				return 0;
@@ -577,7 +571,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 			// 停止屏幕共享
 			pZXEngine->stopScreen();
 
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 			{
 				writeLog("WorkThreadFunc stop6");
 				return 0;
@@ -595,7 +589,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 					delete pRemote;
 				}
 
-				if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+				if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 				{
 					pZXEngine->mutex.unlock();
 					writeLog("WorkThreadFunc stop7");
@@ -609,7 +603,7 @@ DWORD WINAPI ZXEngine::WorkThreadFunc(LPVOID data)
 		// 延时
 		for (int i = 0; i < 10; i++)
 		{
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bWorkExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bWorkExit)
 			{
 				writeLog("WorkThreadFunc stop8");
 				return 0;
@@ -628,7 +622,7 @@ DWORD WINAPI ZXEngine::HeatThreadFunc(LPVOID data)
 	ZXEngine *pZXEngine = (ZXEngine*)data;
 	while (!pZXEngine->bHeatExit)
 	{
-		if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bHeatExit)
+		if (pZXEngine->bRoomClose || pZXEngine->bHeatExit)
 		{
 			writeLog("HeatThreadFunc stop1");
 			return 0;
@@ -637,61 +631,63 @@ DWORD WINAPI ZXEngine::HeatThreadFunc(LPVOID data)
 		if (pZXEngine->mStatus == 0)
 		{
 			nCount = 1;
+			writeLog("restart socket");
 			if (pZXEngine->mZXClient.Start(pZXEngine->strUrl))
 			{
-				pZXEngine->mStatus = 1;
+				writeLog("restart socket ok");
+
+				if (pZXEngine->bRoomClose || pZXEngine->bHeatExit)
+				{
+					writeLog("HeatThreadFunc stop2");
+					return 0;
+				}
+
+				writeLog("restart join room");
+
+				nCount = 10;
+				if (pZXEngine->mZXClient.SendJoin())
+				{
+					writeLog("restart join room ok");
+					nCount = 200;
+					pZXEngine->mStatus = 1;
+				}
+				else
+				{
+					writeLog("restart join room fail");
+					pZXEngine->mZXClient.Stop();
+				}
+			}
+			else
+			{
+				writeLog("restart socket fail");
+				pZXEngine->mZXClient.Stop();
 			}
 
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bHeatExit)
-			{
-				writeLog("HeatThreadFunc stop2");
-				return 0;
-			}
-		}
-		else if (pZXEngine->mStatus == 1)
-		{
-			nCount = 10;
-			if (pZXEngine->mZXClient.SendJoin())
-			{
-				nCount = 200;
-				pZXEngine->mStatus = 2;
-			}
-
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bHeatExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bHeatExit)
 			{
 				writeLog("HeatThreadFunc stop3");
 				return 0;
 			}
 		}
-		else if (pZXEngine->mStatus == 2)
+		else if (pZXEngine->mStatus == 1)
 		{
+			writeLog("start send alive");
 			nCount = 200;
 			pZXEngine->mZXClient.SendAlive();
-			/*
-			static int nTmp = 0;
-			bool bSuc = pZXEngine->mZXClient.SendAlive();
-			if (bSuc)
+
+			if (pZXEngine->bRoomClose || pZXEngine->bHeatExit)
 			{
-				nTmp = 0;
+				writeLog("HeatThreadFunc stop4");
+				return 0;
 			}
-			else
-			{
-				nTmp++;
-			}
-			if (nTmp >= 2)
-			{
-				nCount = 1;
-				pZXEngine->mStatus = 0;
-				// 停止socket
-				pZXEngine->mZXClient.Stop();
-			}*/
 		}
+		
 		// 延时
 		for (int i = 0; i < nCount; i++)
 		{
-			if (pZXEngine->bSocketClose || pZXEngine->bRoomClose || pZXEngine->bHeatExit)
+			if (pZXEngine->bRoomClose || pZXEngine->bHeatExit)
 			{
-				writeLog("HeatThreadFunc stop4");
+				writeLog("HeatThreadFunc stop5");
 				return 0;
 			}
 			Sleep(100);

@@ -29,12 +29,6 @@ extern "C"
 	// 释放sdk
 	WEBRTC_API void freeSdk();
 
-	// 启动连接
-	WEBRTC_API bool start();
-
-	// 停止连接
-	WEBRTC_API void stop();
-
 	// 加入房间
 	WEBRTC_API bool joinRoom(char *rid);
 
@@ -46,6 +40,7 @@ extern "C"
 
 	// 设置是否屏幕共享和帧率(5-30)
 	WEBRTC_API void setScreen(bool bPub);
+	WEBRTC_API void setScreenPub(bool bPub);
 	WEBRTC_API void setFrameRate(int nFrameRate);
 
 	// 设置麦克风

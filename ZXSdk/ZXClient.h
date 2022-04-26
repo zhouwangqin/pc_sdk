@@ -60,7 +60,7 @@ public:
 	 }
 	*/
 	// ·¢ËÍĞÄÌø
-	bool SendAlive();
+	void SendAlive();
 
 	/*
 	  "request":true
