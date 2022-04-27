@@ -32,19 +32,6 @@ ZXPeerLocal::~ZXPeerLocal()
 	pAnswerSetSdpObserver = nullptr;
 }
 
-void ZXPeerLocal::OnMessage(rtc::Message * msg)
-{
-	if (msg->message_id == set_offer_sdp_ok)
-	{
-		SendPublish(sdp_);
-	}
-}
-
-void ZXPeerLocal::OnData(const void * audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames)
-{
-	ZXEngine::writeLog("local peer audio callback");
-}
-
 void ZXPeerLocal::StartPublish()
 {
 	InitPeerConnection();
@@ -92,7 +79,7 @@ void ZXPeerLocal::CreateSdpSuc(webrtc::SessionDescriptionInterface* sdp)
 	{
 		return;
 	}
-	
+
 	sdp->ToString(&sdp_);
 	SetLocalDescription(sdp);
 }
@@ -116,7 +103,7 @@ void ZXPeerLocal::SetLocalDescription(webrtc::SessionDescriptionInterface* sdp)
 void ZXPeerLocal::OnSetLocalSdpSuc()
 {
 	ZXEngine::writeLog("local peer set offer sdp ok");
-	if (bClose) 
+	if (bClose)
 	{
 		return;
 	}
@@ -241,14 +228,14 @@ void ZXPeerLocal::FreePeerConnection()
 
 void ZXPeerLocal::SendPublish(std::string sdp)
 {
-	if (bClose) 
+	if (bClose)
 	{
 		return;
 	}
 
 	if (pZXEngine != nullptr && sdp != "")
 	{
-		if (pZXEngine->mZXClient.SendPublish(sdp, true, false, 0)) 
+		if (pZXEngine->mZXClient.SendPublish(sdp, true, false, 0))
 		{
 			nLive = 2;
 			// ´¦Àí·µ»Ø
@@ -261,7 +248,7 @@ void ZXPeerLocal::SendPublish(std::string sdp)
 		}
 	}
 
-	if (bClose) 
+	if (bClose)
 	{
 		return;
 	}
@@ -301,5 +288,18 @@ void ZXPeerLocal::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnec
 	{
 		ZXEngine::writeLog("local peer kFailed");
 		nLive = 0;
+	}
+}
+
+void ZXPeerLocal::OnData(const void * audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames)
+{
+	//ZXEngine::writeLog("local peer audio callback");
+}
+
+void ZXPeerLocal::OnMessage(rtc::Message * msg)
+{
+	if (msg->message_id == set_offer_sdp_ok)
+	{
+		SendPublish(sdp_);
 	}
 }

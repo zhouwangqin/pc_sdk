@@ -38,19 +38,11 @@ ZXEngine::ZXEngine()
 
 	// 打开日志
 	rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
-	// 启动线程
-	g_ws_thread_ = rtc::Thread::CreateWithSocketServer();
-	g_ws_thread_->SetName("websocket_thread", nullptr);
-	g_ws_thread_->Start();
 }
 
 ZXEngine::~ZXEngine()
 {
-	if (g_ws_thread_.get() != nullptr)
-	{
-		g_ws_thread_->Stop();
-		g_ws_thread_.reset();
-	}
+	
 }
 
 void ZXEngine::setLogDebug(log_callback callback)
@@ -85,7 +77,6 @@ bool ZXEngine::initSdk(std::string uid)
 	strUid = uid;
 	mLocalPeer.strUid = uid;
 	mScreenPeer.strUid = uid;
-	writeLog("start initSdk");
 	return initPeerConnectionFactory();
 }
 
@@ -97,10 +88,8 @@ void ZXEngine::freeSdk()
 		return;
 	}
 
-	writeLog("start freeSdk");
 	freePeerConnectionFactory();
 	strUid = "";
-	writeLog("start freeSdk ok");
 }
 
 // 加入房间
@@ -324,6 +313,11 @@ bool ZXEngine::initPeerConnectionFactory()
 {
 	freePeerConnectionFactory();
 
+	// 启动线程
+	g_ws_thread_ = rtc::Thread::CreateWithSocketServer();
+	g_ws_thread_->SetName("websocket_thread", nullptr);
+	g_ws_thread_->Start();
+
 	// rtc线程
 	g_signaling_thread = rtc::Thread::Create();
 	g_signaling_thread->SetName("signaling_thread", nullptr);
@@ -359,6 +353,11 @@ void ZXEngine::freePeerConnectionFactory()
 	{
 		g_signaling_thread->Stop();
 		g_signaling_thread.reset();
+	}
+	if (g_ws_thread_.get() != nullptr)
+	{
+		g_ws_thread_->Stop();
+		g_ws_thread_.reset();
 	}
 }
 

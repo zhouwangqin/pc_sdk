@@ -49,8 +49,6 @@ void ZXVideoObserver::OnFrame(const webrtc::VideoFrame & frame)
 					}
 				}
 			}
-			i420_buffer = nullptr;
 		}
-		buffer = nullptr;
 	}
 }

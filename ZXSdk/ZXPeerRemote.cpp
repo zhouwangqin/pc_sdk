@@ -33,19 +33,6 @@ ZXPeerRemote::~ZXPeerRemote()
 	pAnswerSetSdpObserver = nullptr;
 }
 
-void ZXPeerRemote::OnMessage(rtc::Message * msg)
-{
-	if (msg->message_id == set_offer_sdp_ok)
-	{
-		SendSubscribe(sdp_);
-	}
-}
-
-void ZXPeerRemote::OnData(const void * audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames)
-{
-	//ZXEngine::writeLog("remote peer audio callback = ");
-}
-
 void ZXPeerRemote::StartSubscribe()
 {
 	InitPeerConnection();
@@ -297,6 +284,19 @@ void ZXPeerRemote::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConne
 		std::string msg = "remote peer kFailed = " + strMid;
 		ZXEngine::writeLog(msg);
 		nLive = 0;
+	}
+}
+
+void ZXPeerRemote::OnData(const void * audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames)
+{
+	//ZXEngine::writeLog("remote peer audio callback = ");
+}
+
+void ZXPeerRemote::OnMessage(rtc::Message * msg)
+{
+	if (msg->message_id == set_offer_sdp_ok)
+	{
+		SendSubscribe(sdp_);
 	}
 }
 

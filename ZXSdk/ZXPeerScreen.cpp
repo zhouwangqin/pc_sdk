@@ -54,15 +54,6 @@ void ZXPeerScreen::StopPublish()
 	FreePeerConnection();
 }
 
-void ZXPeerScreen::OnMessage(rtc::Message * msg)
-{
-	if (msg->message_id == set_offer_sdp_ok)
-	{
-		SetBitrate();
-		SendPublish(sdp_);
-	}
-}
-
 void ZXPeerScreen::CreateOffer()
 {
 	if (peer_connection_ != nullptr)
@@ -328,6 +319,15 @@ void ZXPeerScreen::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConne
 	{
 		ZXEngine::writeLog("screen peer kFailed");
 		nLive = 0;
+	}
+}
+
+void ZXPeerScreen::OnMessage(rtc::Message * msg)
+{
+	if (msg->message_id == set_offer_sdp_ok)
+	{
+		SetBitrate();
+		SendPublish(sdp_);
 	}
 }
 

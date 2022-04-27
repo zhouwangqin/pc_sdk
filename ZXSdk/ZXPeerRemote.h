@@ -60,11 +60,11 @@ private:
 	void OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state) override {}
 	void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {}
 
-	// MessageHandler implementation
-	void OnMessage(rtc::Message* msg) override;
-
 	// AudioTrackSinkInterface implementation
 	void OnData(const void* audio_data, int bits_per_sample, int sample_rate, size_t number_of_channels, size_t number_of_frames) override;
+
+	// MessageHandler implementation
+	void OnMessage(rtc::Message* msg) override;
 
 public:
 	// ²ÎÊý

@@ -26,21 +26,18 @@ bool WebSocketClient::open(const std::string uri)
 
 	using websocketpp::lib::placeholders::_1;
 	using websocketpp::lib::placeholders::_2;
-	using websocketpp::lib::bind;
 
 	m_endpoint = std::unique_ptr<client>(new client);
 	m_endpoint->set_access_channels(websocketpp::log::alevel::none);
-	//m_endpoint->set_error_channels(websocketpp::log::elevel::all);
 
 	// Initialize ASIO
 	m_endpoint->init_asio();
 
 	// Register our handlers
-	m_endpoint->set_socket_init_handler(bind(&WebSocketClient::onSocketInit, this, _1));
-	m_endpoint->set_message_handler(bind(&WebSocketClient::onMessage, this, _1, _2));
 	m_endpoint->set_open_handler(bind(&WebSocketClient::onOpen, this, _1));
 	m_endpoint->set_close_handler(bind(&WebSocketClient::onClose, this, _1));
 	m_endpoint->set_fail_handler(bind(&WebSocketClient::onFail, this, _1));
+	m_endpoint->set_message_handler(bind(&WebSocketClient::onMessage, this, _1, _2));
 
 	websocketpp::lib::error_code ec;
 	client::connection_ptr con = m_endpoint->get_connection(uri, ec);
@@ -84,6 +81,7 @@ void WebSocketClient::close()
 	{
 		try
 		{
+			m_endpoint->stop();
 			websocketpp::lib::error_code ec;
 			m_endpoint->close(m_hdl, websocketpp::close::status::normal, "", ec);
 			if (ec)
@@ -126,12 +124,6 @@ void WebSocketClient::work_thread(WebSocketClient *pWebsocket)
 		msg = msg + e.what();
 		ZXEngine::writeLog(msg);
 	}
-}
-
-void WebSocketClient::onSocketInit(websocketpp::connection_hdl hdl)
-{
-	std::string msg = "websocket socket init";
-	ZXEngine::writeLog(msg);
 }
 
 void WebSocketClient::onMessage(websocketpp::connection_hdl hdl, message_ptr msg)

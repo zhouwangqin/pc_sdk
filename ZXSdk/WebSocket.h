@@ -27,7 +27,6 @@ public:
 	bool send(const std::string& msg);
 	void close();
 
-	virtual void onSocketInit(websocketpp::connection_hdl hdl);
 	virtual void onMessage(websocketpp::connection_hdl hdl, message_ptr msg);
 	virtual void onOpen(websocketpp::connection_hdl hdl);
 	virtual void onClose(websocketpp::connection_hdl hdl);
