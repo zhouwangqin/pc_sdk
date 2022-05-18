@@ -16,8 +16,8 @@ ZXPeerScreen::ZXPeerScreen()
 
 	nCapFrameRate = 8;
 	nMinBitRate = 100;
-	nMaxBitRate = 1000;
-	nStartBitRate = 500;
+	nMaxBitRate = 1500;
+	nStartBitRate = 1000;
 
 	sdp_ = "";
 	video_device_ = nullptr;
